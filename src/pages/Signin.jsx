@@ -1,9 +1,53 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { signInWithPopup } from 'firebase/auth';
+import { auth, googleProvider } from '../config/firebase';
+import { useAuth } from '../context/AuthContext';
 import phygenLogo from '../assets/icons/phygen-logo.png';
 import googleIcon from '../assets/icons/google-icon.png';
 import facebookIcon from '../assets/icons/facebook-icon.png';
 
 const SignIn = () => {
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (user) {
+      navigate('/');
+    }
+  }, [user, navigate]);
+
+  const signInWithGoogle = async () => {
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      console.log('Đăng nhập thành công:', result.user);
+      navigate('/');
+    } catch (error) {
+      console.error('Chi tiết lỗi:', {
+        code: error.code,
+        message: error.message
+      });
+      
+      switch (error.code) {
+        case 'auth/popup-closed-by-user':
+          setError('Cửa sổ đăng nhập đã bị đóng. Vui lòng thử lại.');
+          break;
+        case 'auth/popup-blocked':
+          setError('Trình duyệt đã chặn cửa sổ popup. Vui lòng cho phép popup và thử lại.');
+          break;
+        case 'auth/cancelled-popup-request':
+          setError('Yêu cầu đăng nhập đã bị hủy. Vui lòng thử lại.');
+          break;
+        case 'auth/network-request-failed':
+          setError('Lỗi kết nối mạng. Vui lòng kiểm tra kết nối internet của bạn.');
+          break;
+        default:
+          setError(`Lỗi đăng nhập: ${error.message}`);
+      }
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#f5f9ff] flex flex-col items-center justify-center">
       {/* Logo & Heading */}
@@ -60,13 +104,17 @@ const SignIn = () => {
 
         {/* Sign up link */}
         <p className="text-sm text-center mt-4 text-gray-600">
-          Don't have an account? <a href="#" className="text-blue-700 hover:underline">Sign up</a>
+          Don't have an account? <Link to="/signup" className="text-blue-700 hover:underline">Sign up</Link>
         </p>
       </div>
 
       {/* Footer */}
       <div className="mt-6 text-center text-xs">
-        <a href="#" className="text-blue-700 hover:underline">Terms of Service</a> and <a href="#" className="text-blue-700 hover:underline">Privacy Policy</a>
+        <Link to="/privacy-policy" className="text-blue-700 hover:underline">Terms of Service</Link>
+        {' '}&bull;{' '}
+        <Link to="/privacy-policy" className="text-blue-700 hover:underline">Privacy Policy</Link>
+        {' '}&bull;{' '}
+        <Link to="/data-deletion" className="text-blue-700 hover:underline">Data Deletion</Link>
       </div>
     </div>
   );
