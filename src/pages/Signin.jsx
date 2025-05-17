@@ -6,17 +6,27 @@ import { useAuth } from '../context/AuthContext';
 import phygenLogo from '../assets/icons/phygen-logo.png';
 import googleIcon from '../assets/icons/google-icon.png';
 import facebookIcon from '../assets/icons/facebook-icon.png';
+import FacebookLogin from 'react-facebook-login';
 
 const SignIn = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  useEffect(() => {
-    if (user) {
+  const responseFacebook = (response) => {
+    console.log(response);
+    if (response.accessToken) {
+      // Xử lý đăng nhập thành công
+      alert("Đăng nhập thành công với Facebook!");
+      console.log("Đăng nhập thành công với Facebook!");
+      // Gửi token lên server của bạn để xác thực
       navigate('/');
     }
-  }, [user, navigate]);
+  };
+
+  const componentClicked = () => {
+    console.log("Facebook button clicked");
+  };
 
   const signInWithGoogle = async () => {
     try {
@@ -107,7 +117,7 @@ const SignIn = () => {
             Continue with Google
           </button>
           <FacebookLogin
-            appId="YOUR_FACEBOOK_APP_ID" // Thay thế bằng App ID của bạn
+            appId="586226720625781" // Thay thế bằng App ID của bạn
             autoLoad={false}
             fields="name,email,picture"
             onClick={componentClicked}
