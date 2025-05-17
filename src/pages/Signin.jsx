@@ -1,9 +1,23 @@
 import React from 'react';
+import FacebookLogin from 'react-facebook-login';
 import phygenLogo from '../assets/icons/phygen-logo.png';
 import googleIcon from '../assets/icons/google-icon.png';
 import facebookIcon from '../assets/icons/facebook-icon.png';
 
 const SignIn = () => {
+  const responseFacebook = (response) => {
+    console.log(response);
+    if (response.accessToken) {
+      // Xử lý đăng nhập thành công
+      console.log("Đăng nhập thành công với Facebook!");
+      // Gửi token lên server của bạn để xác thực
+    }
+  };
+
+  const componentClicked = () => {
+    console.log("Facebook button clicked");
+  };
+
   return (
     <div className="min-h-screen bg-[#f5f9ff] flex flex-col items-center justify-center">
       {/* Logo & Heading */}
@@ -52,10 +66,16 @@ const SignIn = () => {
             <img src={googleIcon} alt="Google" className="w-5 h-5" />
             Continue with Google
           </button>
-          <button className="w-full flex items-center justify-center gap-2 border border-gray-300 py-2 rounded-md hover:bg-gray-50 transition text-sm">
-            <img src={facebookIcon} alt="Facebook" className="w-5 h-5" />
-            Continue with Facebook
-          </button>
+          <FacebookLogin
+            appId="YOUR_FACEBOOK_APP_ID" // Thay thế bằng App ID của bạn
+            autoLoad={false}
+            fields="name,email,picture"
+            onClick={componentClicked}
+            callback={responseFacebook}
+            cssClass="w-full flex items-center justify-center gap-2 border border-gray-300 py-2 rounded-md hover:bg-gray-50 transition text-sm"
+            icon={<img src={facebookIcon} alt="Facebook" className="w-5 h-5" />}
+            textButton="Continue with Facebook"
+          />
         </div>
 
         {/* Sign up link */}
