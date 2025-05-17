@@ -1,34 +1,22 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 const AuthWrapper = ({ children }) => {
     const navigate = useNavigate();
+    const { user, loading } = useAuth();
 
     useEffect(() => {
-        const token = localStorage.getItem('token'); // hoặc từ nơi bạn lưu token
-        const isTokenValid = checkTokenValidity(token);
-        
-        if (!token || !isTokenValid) {
-            navigate('/landing');
+        if (!loading && !user) {
+            navigate('/signin');
         }
-    }, [navigate]);
+    }, [user, loading, navigate]);
+
+    if (loading) {
+        return <div>Loading...</div>;
+    }
 
     return children;
-};
-
-// Hàm kiểm tra tính hợp lệ của token
-const checkTokenValidity = (token) => {
-    if (!token) return false;
-    
-    try {
-        // Decode JWT token để lấy thời gian hết hạn
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        const expirationTime = payload.exp * 1000; // Chuyển đổi sang milliseconds
-        
-        return Date.now() < expirationTime;
-    } catch (error) {
-        return false;
-    }
 };
 
 export default AuthWrapper;

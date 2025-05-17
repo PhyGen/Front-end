@@ -1,9 +1,53 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { signInWithPopup } from 'firebase/auth';
+import { auth, googleProvider } from '../config/firebase';
+import { useAuth } from '../context/AuthContext';
 import phygenLogo from '../assets/icons/phygen-logo.png';
 import googleIcon from '../assets/icons/google-icon.png';
 import facebookIcon from '../assets/icons/facebook-icon.png';
 
 const SignIn = () => {
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (user) {
+      navigate('/');
+    }
+  }, [user, navigate]);
+
+  const signInWithGoogle = async () => {
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      console.log('Đăng nhập thành công:', result.user);
+      navigate('/');
+    } catch (error) {
+      console.error('Chi tiết lỗi:', {
+        code: error.code,
+        message: error.message
+      });
+      
+      switch (error.code) {
+        case 'auth/popup-closed-by-user':
+          setError('Cửa sổ đăng nhập đã bị đóng. Vui lòng thử lại.');
+          break;
+        case 'auth/popup-blocked':
+          setError('Trình duyệt đã chặn cửa sổ popup. Vui lòng cho phép popup và thử lại.');
+          break;
+        case 'auth/cancelled-popup-request':
+          setError('Yêu cầu đăng nhập đã bị hủy. Vui lòng thử lại.');
+          break;
+        case 'auth/network-request-failed':
+          setError('Lỗi kết nối mạng. Vui lòng kiểm tra kết nối internet của bạn.');
+          break;
+        default:
+          setError(`Lỗi đăng nhập: ${error.message}`);
+      }
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#f5f9ff] flex flex-col items-center justify-center">
       {/* Logo & Heading */}
@@ -14,6 +58,12 @@ const SignIn = () => {
 
       {/* Form box */}
       <div className="w-full max-w-sm bg-white rounded-lg shadow-md px-6 py-6">
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 text-sm">
+            {error}
+          </div>
+        )}
+
         <form className="space-y-4">
           <div>
             <label className="text-sm text-gray-600 mb-1 block">Email</label>
@@ -48,7 +98,11 @@ const SignIn = () => {
 
         {/* Social buttons */}
         <div className="space-y-2 mt-4">
-          <button className="w-full flex items-center justify-center gap-2 border border-gray-300 py-2 rounded-md hover:bg-gray-50 transition text-sm">
+          <button 
+            onClick={signInWithGoogle}
+            type="button"
+            className="w-full flex items-center justify-center gap-2 border border-gray-300 py-2 rounded-md hover:bg-gray-50 transition text-sm"
+          >
             <img src={googleIcon} alt="Google" className="w-5 h-5" />
             Continue with Google
           </button>
