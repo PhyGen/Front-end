@@ -2,16 +2,19 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { signInWithPopup } from 'firebase/auth';
 import { auth, googleProvider } from '../config/firebase';
-import phygenLogo from '../assets/icons/phygen-logo.png';
+
+import { useAuth } from '../context/AuthContext';
+import phygenLogo from '../assets/icons/phygen-icon.png';
 import googleIcon from '../assets/icons/google-icon.png';
 import facebookIcon from '../assets/icons/facebook-icon.png';
-import FacebookLogin from '@greatsumini/react-facebook-login';
-import { IoIosEye, IoIosEyeOff } from "react-icons/io";
+
 
 const SignIn = () => {
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
+  const { user } = useAuth();
+
 
   const signInWithGoogle = async () => {
     try {
@@ -102,31 +105,6 @@ const SignIn = () => {
             <img src={googleIcon} alt="Google" className="w-5 h-5" />
             Continue with Google
           </button>
-          <FacebookLogin
-            appId="586226720625781"
-            onSuccess={(response) => {
-              console.log(response);
-              if (response.accessToken) {
-                alert("Đăng nhập thành công với Facebook!");
-                console.log("Đăng nhập thành công với Facebook!");
-                navigate('/');
-              }
-            }}
-            onFail={(error) => {
-              console.log("Đăng nhập thất bại:", error);
-              setError("Đăng nhập Facebook thất bại. Vui lòng thử lại.");
-            }}
-            className="w-full flex items-center justify-center gap-2 border border-gray-300 py-2 rounded-md hover:bg-gray-50 transition text-sm"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '0.5rem'
-            }}
-          >
-            <img src={facebookIcon} alt="Facebook" className="w-5 h-5" />
-            Continue with Facebook
-          </FacebookLogin>
         </div>
 
         {/* Sign up link */}
