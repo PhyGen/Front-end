@@ -6,7 +6,7 @@ import { auth, googleProvider } from '../config/firebase';
 import { useAuth } from '../context/AuthContext';
 import phygenLogo from '../assets/icons/phygen-icon.png';
 import googleIcon from '../assets/icons/google-icon.png';
-import facebookIcon from '../assets/icons/facebook-icon.png';
+
 
 
 const SignIn = () => {
