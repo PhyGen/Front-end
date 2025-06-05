@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import phygenLogo from '../assets/icons/phygen-logo.png';
+import phygenLogo from '../assets/icons/phygen-icon.png';
 import landmarkIcon from '../assets/icons/landmark-icon.png';
 import blendIcon from '../assets/icons/blend-icon.png';
 import scanTextIcon from '../assets/icons/scan-text.png';

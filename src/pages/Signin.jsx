@@ -3,30 +3,14 @@ import { useNavigate, Link } from 'react-router-dom';
 import { signInWithPopup } from 'firebase/auth';
 import { auth, googleProvider } from '../config/firebase';
 import { useAuth } from '../context/AuthContext';
-import phygenLogo from '../assets/icons/phygen-logo.png';
+import phygenLogo from '../assets/icons/phygen-icon.png';
 import googleIcon from '../assets/icons/google-icon.png';
 import facebookIcon from '../assets/icons/facebook-icon.png';
-import FacebookLogin from 'react-facebook-login';
 
 const SignIn = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
   const { user } = useAuth();
-
-  const responseFacebook = (response) => {
-    console.log(response);
-    if (response.accessToken) {
-      // Xử lý đăng nhập thành công
-      alert("Đăng nhập thành công với Facebook!");
-      console.log("Đăng nhập thành công với Facebook!");
-      // Gửi token lên server của bạn để xác thực
-      navigate('/');
-    }
-  };
-
-  const componentClicked = () => {
-    console.log("Facebook button clicked");
-  };
 
   const signInWithGoogle = async () => {
     try {
@@ -116,16 +100,6 @@ const SignIn = () => {
             <img src={googleIcon} alt="Google" className="w-5 h-5" />
             Continue with Google
           </button>
-          <FacebookLogin
-            appId="586226720625781" // Thay thế bằng App ID của bạn
-            autoLoad={false}
-            fields="name,email,picture"
-            onClick={componentClicked}
-            callback={responseFacebook}
-            cssClass="w-full flex items-center justify-center gap-2 border border-gray-300 py-2 rounded-md hover:bg-gray-50 transition text-sm"
-            icon={<img src={facebookIcon} alt="Facebook" className="w-5 h-5" />}
-            textButton="Continue with Facebook"
-          />
         </div>
 
         {/* Sign up link */}
