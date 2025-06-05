@@ -1,16 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { signInWithPopup } from 'firebase/auth';
 import { auth, googleProvider } from '../config/firebase';
+
 import { useAuth } from '../context/AuthContext';
 import phygenLogo from '../assets/icons/phygen-icon.png';
 import googleIcon from '../assets/icons/google-icon.png';
 import facebookIcon from '../assets/icons/facebook-icon.png';
 
+
 const SignIn = () => {
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuth();
+
 
   const signInWithGoogle = async () => {
     try {
@@ -69,17 +73,18 @@ const SignIn = () => {
             />
           </div>
           <div className="relative">
+            <label className="text-sm text-gray-600 mb-1 block">Password</label>
             <input
-              type="password"
+              type={showPassword ? "text" : "password"}
               placeholder="Password"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm [&::-ms-reveal]:hidden [&::-ms-clear]:hidden"
               required
             />
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 cursor-pointer">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-              </svg>
+            <span 
+              className="absolute right-3 top-1/2 transform translate-y-1 text-gray-400 cursor-pointer"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? <IoIosEyeOff size={20} /> : <IoIosEye size={20} />}
             </span>
           </div>
           <button
