@@ -1,17 +1,19 @@
+import React from 'react';
 import PropTypes from 'prop-types';
-import Header from '../Header';
-import Footer from '../Footer';
-function DefaultLayout({ children }) {
+import Navbar from '../../components/Navbar';
+import Sidebar from '../../components/Sidebar';
+
+const DefaultLayout = ({ children }) => {
     return (
-        <div className='App'>
-            <Header />
-            <div className='container'>
-                <div className='content'>{children}</div>
+        <div className="flex flex-col min-h-screen bg-blue-100">
+            <Navbar />
+            <div className="flex flex-1 p-8 gap-8 max-lg:flex-col max-lg:p-2">
+                <Sidebar />
+                <main className="flex-1 min-w-0">{children}</main>
             </div>
-            <Footer/>
         </div>
     );
-}
+};
 
 DefaultLayout.propTypes = {
     children: PropTypes.node.isRequired,

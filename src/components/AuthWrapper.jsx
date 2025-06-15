@@ -8,7 +8,7 @@ const AuthWrapper = ({ children }) => {
 
     useEffect(() => {
         if (!loading && !user) {
-            navigate('/signin');
+            navigate('/landing');
         }
     }, [user, loading, navigate]);
 

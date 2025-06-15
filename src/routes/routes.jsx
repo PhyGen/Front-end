@@ -1,4 +1,4 @@
-import Home from "../pages/Home";
+import MainScreen from "../pages/MainScreen"; 
 import Landing from "../pages/Landing";
 import Signin from "../pages/Signin";
 import Signup from "../pages/Signup";
@@ -6,6 +6,7 @@ import Profile from "../pages/Profile";
 import AuthWrapper from "../components/AuthWrapper";
 import PrivacyPolicy from "../pages/PrivacyPolicy";
 import DataDeletion from "../pages/DataDeletion";
+
 
 const publicRoutes = [
     { path: '/landing', component: Landing, layout: null },
@@ -16,7 +17,7 @@ const publicRoutes = [
 ];
 
 const privateRoutes = [
-    { path: '/', component: Home, layout: null, wrapper: AuthWrapper },
+    { path: '/', component: MainScreen, layout: null, wrapper: AuthWrapper },
     { path: '/profile', component: Profile, layout: null, wrapper: AuthWrapper },
     // { path: '/payment', component: Payment, layout: HeaderOnly, role: 'user'},
     // { path: '/customer', component: CustomerLayout,layout : null, role: 'user'},
