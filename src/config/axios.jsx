@@ -1,14 +1,15 @@
 import axios from "axios";
 
+const BASE_URL = "http://localhost:5000";
 // Instance cho API
 const api = axios.create({
-  baseURL: "https://musik.backend.ticketresell-swp.click/api",
+  baseURL: BASE_URL+"/api",
   timeout: 120000,
 });
 
 // Instance cho các yêu cầu không sử dụng /api
 const apiWithoutPrefix = axios.create({
-  baseURL: "https://musik.backend.ticketresell-swp.click/",
+  baseURL: BASE_URL,
   timeout: 120000,
 });
 

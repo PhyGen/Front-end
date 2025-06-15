@@ -6,12 +6,97 @@ import phygenLogo from '../assets/icons/phygen-icon.png';
 import googleIcon from '../assets/icons/google-icon.png';
 import { IoIosEye } from "react-icons/io";
 import { IoIosEyeOff } from "react-icons/io";
+import api from '../config/axios';
+import { ToastContainer, toast } from 'react-toastify';
+
 
 const Signup = () => {
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+    name: '',
+    confirmPassword: ''
+  });
   const navigate = useNavigate();
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setIsLoading(true);
+
+    // Validate form data
+    if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword) {
+      toast.error('Vui lòng điền đầy đủ thông tin', {
+        position: "top-center",
+        theme: "light",
+        autoClose: 2000
+      });
+      setIsLoading(false);
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      toast.error('Mật khẩu xác nhận không khớp', {
+        position: "top-center",
+        theme: "light",
+        autoClose: 2000
+      });
+      setIsLoading(false);
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      toast.error('Mật khẩu phải có ít nhất 6 ký tự', {
+        position: "top-center",
+        theme: "light",
+        autoClose: 2000
+      });
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const signupData = {
+        email: formData.email,
+        password: formData.password,
+        name: formData.name
+      };
+      
+      console.log('Data being sent to server:', signupData);
+      const response = await api.post('signup', signupData);
+      if(response.status === 200){
+        toast.success(response.data.message, {
+          position: "top-center",
+          theme: "light",
+          autoClose: 2000
+        });
+        setTimeout(() => {
+          navigate('/signin');
+        }, 2000);
+      }
+    } catch (error) {
+      console.error('Lỗi đăng ký:', error);
+      toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi đăng ký. Vui lòng thử lại.', {
+        position: "top-center",
+        theme: "light",
+        autoClose: 2000
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const signUpWithGoogle = async () => {
     try {
@@ -24,27 +109,34 @@ const Signup = () => {
         message: error.message
       });
       
+      let errorMessage = 'Có lỗi xảy ra khi đăng ký';
       switch (error.code) {
         case 'auth/popup-closed-by-user':
-          setError('Cửa sổ đăng ký đã bị đóng. Vui lòng thử lại.');
+          errorMessage = 'Cửa sổ đăng ký đã bị đóng. Vui lòng thử lại.';
           break;
         case 'auth/popup-blocked':
-          setError('Trình duyệt đã chặn cửa sổ popup. Vui lòng cho phép popup và thử lại.');
+          errorMessage = 'Trình duyệt đã chặn cửa sổ popup. Vui lòng cho phép popup và thử lại.';
           break;
         case 'auth/cancelled-popup-request':
-          setError('Yêu cầu đăng ký đã bị hủy. Vui lòng thử lại.');
+          errorMessage = 'Yêu cầu đăng ký đã bị hủy. Vui lòng thử lại.';
           break;
         case 'auth/network-request-failed':
-          setError('Lỗi kết nối mạng. Vui lòng kiểm tra kết nối internet của bạn.');
+          errorMessage = 'Lỗi kết nối mạng. Vui lòng kiểm tra kết nối internet của bạn.';
           break;
         default:
-          setError(`Lỗi đăng ký: ${error.message}`);
+          errorMessage = `Lỗi đăng ký: ${error.message}`;
       }
+      toast.error(errorMessage, {
+        position: "top-center",
+        theme: "light",
+        autoClose: 2000
+      });
     }
   };
 
   return (
     <div className="min-h-screen bg-[#f5f9ff] flex flex-col items-center justify-center">
+      <ToastContainer />
       {/* Logo & Heading */}
       <div className="flex flex-col items-center mb-6">
         <img src={phygenLogo} alt="PhyGen Logo" className="w-26 h-26 mb-2" />
@@ -59,11 +151,14 @@ const Signup = () => {
           </div>
         )}
 
-        <form className="space-y-4">
+        <form className="space-y-4" onSubmit={handleSubmit}>
           <div>
             <label className="text-sm text-gray-600 mb-1 block">Full Name</label>
             <input
               type="text"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
               placeholder="Enter your full name"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm"
               required
@@ -73,6 +168,9 @@ const Signup = () => {
             <label className="text-sm text-gray-600 mb-1 block">Email</label>
             <input
               type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
               placeholder="Enter your email address"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm"
               required
@@ -82,6 +180,9 @@ const Signup = () => {
             <label className="text-sm text-gray-600 mb-1 block">Password</label>
             <input
               type={showPassword ? "text" : "password"}
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
               placeholder="Create a password"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm [&::-ms-reveal]:hidden [&::-ms-clear]:hidden"
               required
@@ -97,6 +198,9 @@ const Signup = () => {
             <label className="text-sm text-gray-600 mb-1 block">Confirm Password</label>
             <input
               type={showConfirmPassword ? "text" : "password"}
+              name="confirmPassword"
+              value={formData.confirmPassword}
+              onChange={handleChange}
               placeholder="Confirm your password"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm [&::-ms-reveal]:hidden [&::-ms-clear]:hidden"
               required
@@ -110,9 +214,10 @@ const Signup = () => {
           </div>
           <button
             type="submit"
-            className="w-full bg-blue-700 text-white py-2 rounded-md hover:bg-blue-800 transition font-medium text-sm"
+            disabled={isLoading}
+            className="w-full bg-blue-700 text-white py-2 rounded-md hover:bg-blue-800 transition font-medium text-sm disabled:bg-blue-400 disabled:cursor-not-allowed"
           >
-            Create Account
+            {isLoading ? 'Đang xử lý...' : 'Create Account'}
           </button>
         </form>
 
