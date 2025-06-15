@@ -1,18 +1,15 @@
 import { Navigate } from "react-router-dom";
-import { jwtDecode } from 'jwt-decode';
+import { useAuth } from "../context/AuthContext";
 
-const ProtectedRoute = ({ children, role }) => {
-    const token = localStorage.getItem("token");
+const ProtectedRoute = ({ children }) => {
+    const { user, loading } = useAuth();
 
-    if (!token) {
-        return <Navigate to="/login" replace />;
+    if (loading) {
+        return <div>Loading...</div>;
     }
 
-    const user = jwtDecode(token);
-    console.log(user);
-
-    if (!user || user.role !== role) {
-        return <Navigate to="/errorPage" replace />;
+    if (!user) {
+        return <Navigate to="/landing" replace />;
     }
 
     return children;
