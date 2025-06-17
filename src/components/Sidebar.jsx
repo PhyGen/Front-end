@@ -1,47 +1,71 @@
 import React from 'react';
-import houseIcon from '../assets/icons/house.svg';
-import examIcon from '../assets/icons/exam-svgrepo-com.svg';
-import sharedIcon from '../assets/icons/shared-with-me.svg';
-import recentIcon from '../assets/icons/recent-svgrepo-com.svg';
-import starIcon from '../assets/icons/star-shape-1-svgrepo-com.svg';
-import botIcon from '../assets/icons/bot.svg';
-import spamIcon from '../assets/icons/spam-svgrepo-com.svg';
-import trashIcon from '../assets/icons/trash-can-svgrepo-com.svg';
-import createIcon from '../assets/icons/create-icon.svg';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { 
+  Home, 
+  FileText, 
+  Share2, 
+  Clock, 
+  Star, 
+  Bot, 
+  AlertTriangle, 
+  Trash2, 
+  Plus 
+} from "lucide-react";
 
 const sidebarItems = [
-  { key: 'home', label: 'Home', icon: houseIcon },
-  { key: 'myExam', label: 'My Exam', icon: examIcon },
-  { key: 'shared', label: 'Shared with me', icon: sharedIcon },
-  { key: 'recent', label: 'Recently', icon: recentIcon },
-  { key: 'starred', label: 'Starred', icon: starIcon },
-  { key: 'ai', label: 'AI generate', icon: botIcon },
-  { key: 'spam', label: 'Spam Content', icon: spamIcon },
-  { key: 'trash', label: 'Trash Can', icon: trashIcon },
+  { key: 'home', label: 'Home', icon: Home },
+  { key: 'myExam', label: 'My Exam', icon: FileText },
+  { key: 'shared', label: 'Shared with me', icon: Share2 },
+  { key: 'recent', label: 'Recently', icon: Clock },
+  { key: 'starred', label: 'Starred', icon: Star },
+  { key: 'ai', label: 'AI generate', icon: Bot },
+  { key: 'spam', label: 'Spam Content', icon: AlertTriangle },
+  { key: 'trash', label: 'Trash Can', icon: Trash2 },
 ];
 
 const Sidebar = ({ activeKey, onSelect }) => {
   return (
-    <aside className="w-[210px] bg-blue-50 rounded-2xl min-h-screen flex flex-col items-center py-8 shadow">
-      <ul className="w-full flex flex-col gap-1">
-        <li className="bg-sky-400 text-white font-bold justify-center text-lg mb-4 flex items-center gap-3 px-5 py-3 rounded-xl cursor-pointer select-none hover:bg-sky-500" onClick={() => onSelect('create')}>
-          <img src={createIcon} alt="Create" className="w-7 h-7" />
-          <span>Create</span>
-        </li>
-        {sidebarItems.map((item) => (
-          <li
-            key={item.key}
-            className={`flex items-center gap-3 px-5 py-3 rounded-xl cursor-pointer transition font-medium text-gray-700 select-none
-              ${activeKey === item.key ? 'bg-sky-100 text-sky-500' : 'hover:bg-sky-100 hover:text-sky-500'}
-            `}
-            onClick={() => onSelect(item.key)}
+    <Card className="w-[250px] bg-white/80 backdrop-blur border-0 shadow-lg">
+      <CardContent className="p-4">
+        <div className="space-y-2">
+          <Button 
+            onClick={() => onSelect('create')}
+            className="w-full justify-start gap-3 h-12 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold shadow-lg"
           >
-            <img src={item.icon} alt={item.label} className="w-7 h-7" />
-            <span>{item.label}</span>
-          </li>
-        ))}
-      </ul>
-    </aside>
+            <Plus className="w-5 h-5" />
+            <span>Create New</span>
+          </Button>
+          
+          <div className="space-y-1">
+            {sidebarItems.map((item) => {
+              const IconComponent = item.icon;
+              return (
+                <Button
+                  key={item.key}
+                  variant={activeKey === item.key ? "secondary" : "ghost"}
+                  onClick={() => onSelect(item.key)}
+                  className={`w-full justify-start gap-3 h-11 ${
+                    activeKey === item.key 
+                      ? 'bg-slate-100 text-slate-900 border border-slate-200' 
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                  }`}
+                >
+                  <IconComponent className="w-5 h-5" />
+                  <span className="font-medium">{item.label}</span>
+                  {item.key === 'myExam' && (
+                    <Badge variant="secondary" className="ml-auto text-xs">
+                      3
+                    </Badge>
+                  )}
+                </Button>
+              );
+            })}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 
