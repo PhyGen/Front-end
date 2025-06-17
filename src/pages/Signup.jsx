@@ -2,13 +2,16 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { signInWithPopup } from 'firebase/auth';
 import { auth, googleProvider } from '../config/firebase';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { Eye, EyeOff, Mail, Lock, User, AlertCircle } from "lucide-react";
 import phygenLogo from '../assets/icons/phygen-icon.png';
 import googleIcon from '../assets/icons/google-icon.png';
-import { IoIosEye } from "react-icons/io";
-import { IoIosEyeOff } from "react-icons/io";
 import api from '../config/axios';
 import { ToastContainer, toast } from 'react-toastify';
-
 
 const Signup = () => {
   const [error, setError] = useState('');
@@ -135,117 +138,179 @@ const Signup = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f9ff] flex flex-col items-center justify-center">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex flex-col items-center justify-center p-4">
       <ToastContainer />
+      
       {/* Logo & Heading */}
-      <div className="flex flex-col items-center mb-6">
-        <img src={phygenLogo} alt="PhyGen Logo" className="w-26 h-26 mb-2" />
-        <h2 className="text-2xl font-semibold text-blue-700">Sign up</h2>
-      </div>
-
-      {/* Form box */}
-      <div className="w-full max-w-sm bg-white rounded-lg shadow-md px-6 py-6">
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 text-sm">
-            {error}
-          </div>
-        )}
-
-        <form className="space-y-4" onSubmit={handleSubmit}>
-          <div>
-            <label className="text-sm text-gray-600 mb-1 block">Full Name</label>
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              placeholder="Enter your full name"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm"
-              required
-            />
-          </div>
-          <div>
-            <label className="text-sm text-gray-600 mb-1 block">Email</label>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="Enter your email address"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm"
-              required
-            />
-          </div>
-          <div className="relative">
-            <label className="text-sm text-gray-600 mb-1 block">Password</label>
-            <input
-              type={showPassword ? "text" : "password"}
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              placeholder="Create a password"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm [&::-ms-reveal]:hidden [&::-ms-clear]:hidden"
-              required
-            />
-            <span 
-              className="absolute right-3 top-1/2 transform translate-y-1 text-gray-400 cursor-pointer"
-              onClick={() => setShowPassword(!showPassword)}
-            >
-              {showPassword ? <IoIosEyeOff size={20} /> : <IoIosEye size={20} />}
-            </span>
-          </div>
-          <div className="relative">
-            <label className="text-sm text-gray-600 mb-1 block">Confirm Password</label>
-            <input
-              type={showConfirmPassword ? "text" : "password"}
-              name="confirmPassword"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              placeholder="Confirm your password"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm [&::-ms-reveal]:hidden [&::-ms-clear]:hidden"
-              required
-            />
-            <span 
-              className="absolute right-3 top-1/2 transform translate-y-1 text-gray-400 cursor-pointer"
-              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-            >
-              {showConfirmPassword ? <IoIosEyeOff size={20} /> : <IoIosEye size={20} />}
-            </span>
-          </div>
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full bg-blue-700 text-white py-2 rounded-md hover:bg-blue-800 transition font-medium text-sm disabled:bg-blue-400 disabled:cursor-not-allowed"
-          >
-            {isLoading ? 'Đang xử lý...' : 'Create Account'}
-          </button>
-        </form>
-
-        {/* Social buttons */}
-        <div className="space-y-2 mt-4">
-          <button 
-            onClick={signUpWithGoogle}
-            type="button"
-            className="w-full flex items-center justify-center gap-2 border border-gray-300 py-2 rounded-md hover:bg-gray-50 transition text-sm"
-          >
-            <img src={googleIcon} alt="Google" className="w-5 h-5" />
-            Continue with Google
-          </button>
+      <div className="flex flex-col items-center mb-8">
+        <div className="w-20 h-20 bg-white rounded-full shadow-lg flex items-center justify-center mb-4">
+          <img src={phygenLogo} alt="PhyGen Logo" className="w-16 h-16" />
         </div>
-
-        {/* Sign in link */}
-        <p className="text-sm text-center mt-4 text-gray-600">
-          Already have an account? <Link to="/signin" className="text-blue-700 hover:underline">Sign in</Link>
-        </p>
+        <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+          Create account
+        </h1>
+        <p className="text-slate-600 mt-2">Join PhyGen and start managing your exams</p>
       </div>
+
+      {/* Form Card */}
+      <Card className="w-full max-w-md shadow-xl border-0 bg-white/80 backdrop-blur">
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-2xl font-semibold text-center text-slate-800">
+            Sign up
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {error && (
+            <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+              <AlertCircle className="w-4 h-4" />
+              {error}
+            </div>
+          )}
+
+          <form className="space-y-4" onSubmit={handleSubmit}>
+            <div className="space-y-2">
+              <Label htmlFor="name" className="text-slate-700 font-medium">
+                Full Name
+              </Label>
+              <div className="relative flex items-center h-9">
+                <span className="absolute left-3 inset-y-0 flex items-center">
+                  <User className="text-slate-400 w-4 h-4" />
+                </span>
+                <Input
+                  id="name"
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  placeholder="Enter your full name"
+                  className="pl-10 pr-3 border-slate-200 focus:border-blue-500 focus:ring-blue-500"
+                  required
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-slate-700 font-medium">
+                Email
+              </Label>
+              <div className="relative flex items-center h-9">
+                <span className="absolute left-3 inset-y-0 flex items-center">
+                  <Mail className="text-slate-400 w-4 h-4" />
+                </span>
+                <Input
+                  id="email"
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  placeholder="Enter your email address"
+                  className="pl-10 pr-3 border-slate-200 focus:border-blue-500 focus:ring-blue-500"
+                  required
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="password" className="text-slate-700 font-medium">
+                Password
+              </Label>
+              <div className="relative flex items-center h-9">
+                <span className="absolute left-3 inset-y-0 flex items-center">
+                  <Lock className="text-slate-400 w-4 h-4" />
+                </span>
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  placeholder="Create a password"
+                  className="pl-10 pr-10 border-slate-200 focus:border-blue-500 focus:ring-blue-500"
+                  required
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-0 inset-y-0 flex items-center justify-center h-9 w-9 text-slate-400 hover:text-slate-600"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </Button>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword" className="text-slate-700 font-medium">
+                Confirm Password
+              </Label>
+              <div className="relative flex items-center h-9">
+                <span className="absolute left-3 inset-y-0 flex items-center">
+                  <Lock className="text-slate-400 w-4 h-4" />
+                </span>
+                <Input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  name="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  placeholder="Confirm your password"
+                  className="pl-10 pr-10 border-slate-200 focus:border-blue-500 focus:ring-blue-500"
+                  required
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-0 inset-y-0 flex items-center justify-center h-9 w-9 text-slate-400 hover:text-slate-600"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                >
+                  {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </Button>
+              </div>
+            </div>
+            
+            <Button
+              type="submit"
+              disabled={isLoading}
+              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium py-2"
+            >
+              {isLoading ? 'Creating account...' : 'Create account'}
+            </Button>
+          </form>
+
+          <div className="relative my-6">
+            <Separator />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="bg-white px-2 text-slate-500 text-sm">or continue with</span>
+            </div>
+          </div>
+
+          <Button
+            onClick={signUpWithGoogle}
+            variant="outline"
+            className="w-full border-slate-200 hover:bg-slate-50 text-slate-700"
+          >
+            <img src={googleIcon} alt="Google" className="w-5 h-5 mr-2" />
+            Continue with Google
+          </Button>
+
+          <div className="text-center text-sm text-slate-600">
+            Already have an account?{' '}
+            <Link to="/signin" className="text-blue-600 hover:text-blue-700 font-medium">
+              Sign in
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Footer */}
-      <div className="mt-6 text-center text-xs">
-        <Link to="/privacy-policy" className="text-blue-700 hover:underline">Terms of Service</Link>
-        {' '}&bull;{' '}
-        <Link to="/privacy-policy" className="text-blue-700 hover:underline">Privacy Policy</Link>
-        {' '}&bull;{' '}
-        <Link to="/data-deletion" className="text-blue-700 hover:underline">Data Deletion</Link>
+      <div className="mt-8 text-center text-xs text-slate-500 space-x-4">
+        <Link to="/privacy-policy" className="hover:text-slate-700">Terms of Service</Link>
+        <span>•</span>
+        <Link to="/privacy-policy" className="hover:text-slate-700">Privacy Policy</Link>
+        <span>•</span>
+        <Link to="/data-deletion" className="hover:text-slate-700">Data Deletion</Link>
       </div>
     </div>
   );

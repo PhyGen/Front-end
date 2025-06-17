@@ -5,6 +5,7 @@ import DefaultLayout from "./layouts/defaultLayout/defaultLayout";
 import ErrorPage from "./pages/ErrorPage";
 import ProtectedRoute from '../src/routes/protectRoutes';
 import { AuthProvider } from './context/AuthContext';
+import { SidebarProvider } from './context/SidebarContext';
 import { useAuth } from './context/AuthContext';
 
 function AppRoutes() {
@@ -95,11 +96,13 @@ function AppRoutes() {
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <div className="App">
-          <AppRoutes />
-        </div>
-      </Router>
+      <SidebarProvider>
+        <Router>
+          <div className="App">
+            <AppRoutes />
+          </div>
+        </Router>
+      </SidebarProvider>
     </AuthProvider>
   );
 }
