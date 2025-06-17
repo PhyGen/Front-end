@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { auth } from '../config/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
+import { jwtDecode } from 'jwt-decode';
 
 const AuthContext = createContext();
 
@@ -13,9 +14,28 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-      setLoading(false);
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        setUser(firebaseUser);
+        setLoading(false);
+      } else {
+        // Check for token in localStorage
+        const token = localStorage.getItem('token');
+        if (token) {
+          try {
+            const decodedToken = jwtDecode(token);
+            console.log('Decoded token from AuthContext:', decodedToken);
+            setUser(decodedToken);
+          } catch (error) {
+            console.error('Error decoding token:', error);
+            localStorage.removeItem('token');
+            setUser(null);
+          }
+        } else {
+          setUser(null);
+        }
+        setLoading(false);
+      }
     });
 
     return unsubscribe;
@@ -23,7 +43,8 @@ export const AuthProvider = ({ children }) => {
 
   const value = {
     user,
-    loading
+    loading,
+    setUser
   };
 
   return (
