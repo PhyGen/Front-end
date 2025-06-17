@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 const AuthWrapper = ({ children }) => {
     const navigate = useNavigate();
     const { user, loading } = useAuth();
-
+    
     useEffect(() => {
         if (!loading && !user) {
             navigate('/landing');

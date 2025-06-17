@@ -2,19 +2,86 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { signInWithPopup } from 'firebase/auth';
 import { auth, googleProvider } from '../config/firebase';
-
 import { useAuth } from '../context/AuthContext';
 import phygenLogo from '../assets/icons/phygen-icon.png';
 import googleIcon from '../assets/icons/google-icon.png';
 import { IoIosEye, IoIosEyeOff } from "react-icons/io";
-
+import api from '../config/axios';
+import { ToastContainer, toast } from 'react-toastify';
+import { jwtDecode } from 'jwt-decode';
 
 const SignIn = () => {
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    email: '',
+    password: ''
+  });
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
 
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setIsLoading(true);
+
+    // Validate form data
+    if (!formData.email || !formData.password) {
+      toast.error('Vui lòng điền đầy đủ thông tin', {
+        position: "top-center",
+        theme: "light",
+        autoClose: 2000
+      });
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const loginData = {
+        email: formData.email,
+        password: formData.password
+      };
+      
+      console.log('Data being sent to server:', loginData);
+      const response = await api.post('Login', loginData);
+      console.log('response', response);
+      localStorage.setItem('token', response.data.token);
+      
+      if(response.status === 200) {
+        // Decode token and set user
+        const decodedToken = jwtDecode(response.data.token);
+        console.log('Decoded token after login:', decodedToken);
+        setUser(decodedToken);
+        
+        toast.success(response.data.message, {
+          position: "top-center",
+          theme: "light",
+          autoClose: 2000
+        });
+        setTimeout(() => {
+          navigate('/');
+        }, 2000);
+      }
+    } catch (error) {
+      console.error('Lỗi đăng nhập:', error);
+      toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi đăng nhập. Vui lòng thử lại.', {
+        position: "top-center",
+        theme: "light",
+        autoClose: 2000
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const signInWithGoogle = async () => {
     try {
@@ -48,6 +115,7 @@ const SignIn = () => {
 
   return (
     <div className="min-h-screen bg-[#f5f9ff] flex flex-col items-center justify-center">
+      <ToastContainer />
       {/* Logo & Heading */}
       <div className="flex flex-col items-center mb-6">
         <img src={phygenLogo} alt="PhyGen Logo" className="w-26 h-26 mb-2" />
@@ -62,11 +130,14 @@ const SignIn = () => {
           </div>
         )}
 
-        <form className="space-y-4">
+        <form className="space-y-4" onSubmit={handleSubmit}>
           <div>
             <label className="text-sm text-gray-600 mb-1 block">Email</label>
             <input
               type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
               placeholder="Your email address, phone or username"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm"
               required
@@ -76,6 +147,9 @@ const SignIn = () => {
             <label className="text-sm text-gray-600 mb-1 block">Password</label>
             <input
               type={showPassword ? "text" : "password"}
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
               placeholder="Password"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm [&::-ms-reveal]:hidden [&::-ms-clear]:hidden"
               required
@@ -89,9 +163,10 @@ const SignIn = () => {
           </div>
           <button
             type="submit"
-            className="w-full bg-blue-700 text-white py-2 rounded-md hover:bg-blue-800 transition font-medium text-sm"
+            disabled={isLoading}
+            className="w-full bg-blue-700 text-white py-2 rounded-md hover:bg-blue-800 transition font-medium text-sm disabled:bg-blue-400 disabled:cursor-not-allowed"
           >
-            Sign in
+            {isLoading ? 'Đang xử lý...' : 'Sign in'}
           </button>
         </form>
 
