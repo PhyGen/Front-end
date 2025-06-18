@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { signInWithPopup } from 'firebase/auth';
 import { auth, googleProvider } from '../config/firebase';
@@ -25,6 +25,12 @@ const SignIn = () => {
   });
   const navigate = useNavigate();
   const { user, setUser } = useAuth();
+
+  useEffect(() => {
+    if (user) {
+      console.log('User in context after signin:', user);
+    }
+  }, [user]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
