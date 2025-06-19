@@ -2,25 +2,17 @@ import React, { createContext, useContext, useState } from 'react';
 
 const SidebarContext = createContext();
 
-export const useSidebar = () => {
-  const context = useContext(SidebarContext);
-  if (!context) {
-    throw new Error('useSidebar must be used within a SidebarProvider');
-  }
-  return context;
-};
-
 export const SidebarProvider = ({ children }) => {
-  const [selectedKey, setSelectedKey] = useState('home');
-
-  const value = {
-    selectedKey,
-    setSelectedKey,
-  };
+  const [selectedKey, setSelectedKey] = useState("home");
 
   return (
-    <SidebarContext.Provider value={value}>
+    <SidebarContext.Provider value={{
+      selectedKey,
+      setSelectedKey
+    }}>
       {children}
     </SidebarContext.Provider>
   );
-}; 
+};
+
+export const useSidebar = () => useContext(SidebarContext); 
