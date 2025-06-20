@@ -1,25 +1,25 @@
 import React from "react";
 import { MoreVertical } from "lucide-react";
-import pdfIcon from "@/assets/icons/pdf-icon.svg";
 import {
-  Card,
+  Card as ShadCard,
   CardContent,
   CardTitle,
 } from "@/components/ui/card";
 
-const PdfCard = ({
-  title = "Tên file PDF",
+const Card = ({
+  title = "Tên file",
   previewUrl = "https://i.imgur.com/0y8Ftya.png",
+  icon,
   onClick,
   onMenuClick,
 }) => (
-  <Card
+  <ShadCard
     className="w-[240px] min-h-[270px] rounded-2xl shadow-md border border-gray-200 bg-white flex flex-col justify-between cursor-pointer transition hover:shadow-lg hover:bg-blue-100/80"
     style={{ transition: 'background 0.2s, box-shadow 0.2s' }}
     onClick={onClick}
   >
     <div className="flex items-center justify-between px-4 pt-3 pb-2">
-      <img src={pdfIcon} alt="PDF" className="w-7 h-7" />
+      {icon && <img src={icon} alt="File Icon" className="w-7 h-7" />}
       <CardTitle className="flex-1 text-center text-base font-semibold truncate px-2">
         {title}
       </CardTitle>
@@ -37,13 +37,13 @@ const PdfCard = ({
       <div className="w-[92%] h-[140px] bg-gray-100 rounded-xl overflow-hidden">
         <img
           src={previewUrl}
-          alt="PDF Preview"
+          alt="File Preview"
           className="object-cover w-full h-full"
           draggable={false}
         />
       </div>
     </CardContent>
-  </Card>
+  </ShadCard>
 );
 
-export default PdfCard;
+export default Card;
