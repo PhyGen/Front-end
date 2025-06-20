@@ -20,6 +20,8 @@ import HomeBox from '../components/Home';
 import { useSidebar } from '../context/SidebarContext';
 import CreateTypeSelect from "@/components/CreateTypeSelect";
 import MyExam from "./MyExam";
+import Recently from "./Recently";
+import TrashCan from "./TrashCan";
 
 const Placeholder = ({ label, icon: Icon, description, color = "blue", children }) => (
   <Card className="shadow-lg border-0 bg-gradient-to-br from-white to-slate-50 mb-8">
@@ -79,16 +81,7 @@ const MainScreen = () => {
         );
         break;
       case 'recent':
-        content = (
-          <Placeholder
-            label="Recently"
-            icon={Clock}
-            description="Quick access to your recently viewed content"
-            color="purple"
-          >
-            {/* Nội dung động cho Recently */}
-          </Placeholder>
-        );
+        content = <Recently />;
         break;
       case 'starred':
         content = (
@@ -127,16 +120,7 @@ const MainScreen = () => {
         );
         break;
       case 'trash':
-        content = (
-          <Placeholder
-            label="Trash Can"
-            icon={Trash2}
-            description="Recover or permanently delete items"
-            color="gray"
-          >
-            {/* Nội dung động cho Trash Can */}
-          </Placeholder>
-        );
+        content = <TrashCan />;
         break;
       default:
         content = <HomeBox />;
