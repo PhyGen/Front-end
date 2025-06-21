@@ -13,19 +13,22 @@ import {
   Trash2, 
   Plus 
 } from "lucide-react";
-
-const sidebarItems = [
-  { key: 'home', label: 'Home', icon: Home },
-  { key: 'myExam', label: 'My Exam', icon: FileText },
-  { key: 'shared', label: 'Shared with me', icon: Share2 },
-  { key: 'recent', label: 'Recently', icon: Clock },
-  { key: 'starred', label: 'Starred', icon: Star },
-  { key: 'ai', label: 'AI generate', icon: Bot },
-  { key: 'spam', label: 'Spam Content', icon: AlertTriangle },
-  { key: 'trash', label: 'Trash Can', icon: Trash2 },
-];
+import { useTranslation } from 'react-i18next';
 
 const Sidebar = ({ activeKey, onSelect }) => {
+  const { t } = useTranslation();
+
+  const sidebarItems = [
+    { key: 'home', label: t('home'), icon: Home },
+    { key: 'myExam', label: t('my_exam'), icon: FileText },
+    { key: 'shared', label: t('shared_with_me'), icon: Share2 },
+    { key: 'recent', label: t('recently'), icon: Clock },
+    { key: 'starred', label: t('starred'), icon: Star },
+    { key: 'ai', label: t('ai_generate'), icon: Bot },
+    { key: 'spam', label: t('spam_content'), icon: AlertTriangle },
+    { key: 'trash', label: t('trash_can'), icon: Trash2 },
+  ];
+
   return (
     <Card className="w-[250px] bg-white/80 backdrop-blur border-0 shadow-lg">
       <CardContent className="p-4">
@@ -35,7 +38,7 @@ const Sidebar = ({ activeKey, onSelect }) => {
             className="w-full justify-start gap-3 h-12 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold shadow-lg"
           >
             <Plus className="w-5 h-5" />
-            <span>Create New</span>
+            <span>{t('create_new')}</span>
           </Button>
           
           <div className="space-y-1">

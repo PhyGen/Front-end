@@ -10,8 +10,10 @@ import { Upload, Edit, Save, User, Home, FileText, Globe } from "lucide-react";
 import api from '@/config/axios';
 import { useAuth } from '../context/AuthContext';
 import avatarIcon from '../assets/icons/avatar.jpg';
+import { useTranslation } from 'react-i18next';
 
 const RadixModal = ({ open, onOpenChange, children }) => {
+  const { t } = useTranslation();
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
@@ -43,10 +45,10 @@ const RadixModal = ({ open, onOpenChange, children }) => {
           }}
         >
           <Dialog.Title style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>
-            General Settings
+            {t('general_settings')}
           </Dialog.Title>
           <Dialog.Description style={{ color: '#64748b', marginBottom: 24 }}>
-            Update your profile and application preferences.
+            {t('update_profile_preferences')}
           </Dialog.Description>
           {children}
           <Dialog.Close asChild>
@@ -73,6 +75,7 @@ const RadixModal = ({ open, onOpenChange, children }) => {
 
 const SettingsModal = ({ open, onOpenChange }) => {
   const { user } = useAuth();
+  const { t, i18n } = useTranslation();
   const [isEditing, setIsEditing] = useState(false);
   const [profileData, setProfileData] = useState({
     avatar: null,
@@ -80,11 +83,18 @@ const SettingsModal = ({ open, onOpenChange }) => {
     email: "",
     phoneNumber: null
   });
-  const [startPage, setStartPage] = useState("home");
-  const [language, setLanguage] = useState("english");
+  const [startPage, setStartPage] = useState(() => localStorage.getItem('startPage') || 'home');
   const [pdfOpenMode, setPdfOpenMode] = useState("new-card");
 
-  // Fetch profile user from backend
+  const handleLanguageChange = (lang) => {
+    i18n.changeLanguage(lang);
+  };
+
+  const handleStartPageChange = (page) => {
+    setStartPage(page);
+    localStorage.setItem('startPage', page);
+  };
+
   const fetchProfileUser = async () => {
     if (!user || !user.id) return;
     try {
@@ -102,17 +112,14 @@ const SettingsModal = ({ open, onOpenChange }) => {
     }
   };
 
-  // Gọi fetchProfileUser khi modal mở
   useEffect(() => {
     if (open) {
       fetchProfileUser();
     }
-    // eslint-disable-next-line
   }, [open, user]);
 
   const handleEditToggle = () => {
     if (isEditing) {
-      // Save logic here
       console.log("Saving profile data:", profileData);
     }
     setIsEditing(!isEditing);
@@ -123,35 +130,27 @@ const SettingsModal = ({ open, onOpenChange }) => {
     if (file) {
       const reader = new FileReader();
       reader.onload = (e) => {
-        setProfileData(prev => ({
-          ...prev,
-          avatar: e.target.result
-        }));
+        setProfileData(prev => ({ ...prev, avatar: e.target.result }));
       };
       reader.readAsDataURL(file);
     }
   };
 
   const handleProfileChange = (field, value) => {
-    setProfileData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    setProfileData(prev => ({ ...prev, [field]: value }));
   };
 
   return (
     <RadixModal open={open} onOpenChange={onOpenChange}>
       <div className="flex flex-col md:flex-row gap-6">
-        {/* Left: Profile */}
         <div className="flex-1 min-w-[300px]">
           <div className="space-y-6">
-            {/* Profile Section */}
             <Card>
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <User className="w-5 h-5 text-slate-600" />
-                    <CardTitle className="text-lg">Profile</CardTitle>
+                    <CardTitle className="text-lg">{t('profile')}</CardTitle>
                   </div>
                   <Button 
                     variant={isEditing ? "default" : "outline"}
@@ -162,21 +161,20 @@ const SettingsModal = ({ open, onOpenChange }) => {
                     {isEditing ? (
                       <>
                         <Save className="w-4 h-4" />
-                        Save
+                        {t('save')}
                       </>
                     ) : (
                       <>
                         <Edit className="w-4 h-4" />
-                        Edit
+                        {t('edit')}
                       </>
                     )}
                   </Button>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Avatar */}
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium text-slate-700">Avatar</Label>
+                  <Label className="text-sm font-medium text-slate-700">{t('avatar')}</Label>
                   <div className="flex items-center gap-4">
                     <Avatar className="h-16 w-16">
                       <AvatarImage src={profileData.avatar || avatarIcon} alt="Profile" />
@@ -194,17 +192,15 @@ const SettingsModal = ({ open, onOpenChange }) => {
                         <label htmlFor="avatar-upload">
                           <Button variant="outline" size="sm" className="flex items-center gap-2">
                             <Upload className="w-4 h-4" />
-                            Upload Image
+                            {t('upload_image')}
                           </Button>
                         </label>
                       </div>
                     )}
                   </div>
                 </div>
-
-                {/* Full Name */}
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium text-slate-700">Full Name</Label>
+                  <Label className="text-sm font-medium text-slate-700">{t('full_name')}</Label>
                   <Input
                     value={profileData.fullName}
                     onChange={(e) => handleProfileChange('fullName', e.target.value)}
@@ -212,10 +208,8 @@ const SettingsModal = ({ open, onOpenChange }) => {
                     className="max-w-md"
                   />
                 </div>
-
-                {/* Email */}
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium text-slate-700">Email</Label>
+                  <Label className="text-sm font-medium text-slate-700">{t('email')}</Label>
                   <Input
                     type="email"
                     value={profileData.email}
@@ -224,10 +218,8 @@ const SettingsModal = ({ open, onOpenChange }) => {
                     className="max-w-md"
                   />
                 </div>
-
-                {/* Phone Number */}
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium text-slate-700">Phone Number</Label>
+                  <Label className="text-sm font-medium text-slate-700">{t('phone_number')}</Label>
                   <Input
                     value={profileData.phoneNumber}
                     onChange={(e) => handleProfileChange('phoneNumber', e.target.value)}
@@ -239,14 +231,12 @@ const SettingsModal = ({ open, onOpenChange }) => {
             </Card>
           </div>
         </div>
-        {/* Right: Other settings */}
         <div className="flex-1 flex flex-col gap-6 min-w-[300px]">
-          {/* Start Page Section */}
           <Card>
             <CardHeader className="pb-3">
               <div className="flex items-center gap-3">
                 <Home className="w-5 h-5 text-slate-600" />
-                <CardTitle className="text-lg">Start Page</CardTitle>
+                <CardTitle className="text-lg">{t('start_page')}</CardTitle>
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -257,11 +247,11 @@ const SettingsModal = ({ open, onOpenChange }) => {
                   name="startPage"
                   value="home"
                   checked={startPage === "home"}
-                  onChange={(e) => setStartPage(e.target.value)}
+                  onChange={() => handleStartPageChange('home')}
                   className="w-4 h-4 text-blue-600"
                 />
                 <Label htmlFor="start-home" className="text-sm font-medium text-slate-700 cursor-pointer">
-                  Home
+                  {t('home')}
                 </Label>
               </div>
               <div className="flex items-center gap-3">
@@ -269,24 +259,22 @@ const SettingsModal = ({ open, onOpenChange }) => {
                   type="radio"
                   id="start-exam"
                   name="startPage"
-                  value="my-exam"
-                  checked={startPage === "my-exam"}
-                  onChange={(e) => setStartPage(e.target.value)}
+                  value="myExam"
+                  checked={startPage === "myExam"}
+                  onChange={() => handleStartPageChange('myExam')}
                   className="w-4 h-4 text-blue-600"
                 />
                 <Label htmlFor="start-exam" className="text-sm font-medium text-slate-700 cursor-pointer">
-                  My Exam
+                  {t('my_exam')}
                 </Label>
               </div>
             </CardContent>
           </Card>
-
-          {/* Language Section */}
           <Card>
             <CardHeader className="pb-3">
               <div className="flex items-center gap-3">
                 <Globe className="w-5 h-5 text-slate-600" />
-                <CardTitle className="text-lg">Language</CardTitle>
+                <CardTitle className="text-lg">{t('language')}</CardTitle>
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -295,13 +283,13 @@ const SettingsModal = ({ open, onOpenChange }) => {
                   type="radio"
                   id="lang-english"
                   name="language"
-                  value="english"
-                  checked={language === "english"}
-                  onChange={(e) => setLanguage(e.target.value)}
+                  value="en"
+                  checked={i18n.language.startsWith('en')}
+                  onChange={() => handleLanguageChange('en')}
                   className="w-4 h-4 text-blue-600"
                 />
                 <Label htmlFor="lang-english" className="text-sm font-medium text-slate-700 cursor-pointer">
-                  English
+                  {t('english')}
                 </Label>
               </div>
               <div className="flex items-center gap-3">
@@ -309,24 +297,22 @@ const SettingsModal = ({ open, onOpenChange }) => {
                   type="radio"
                   id="lang-vietnamese"
                   name="language"
-                  value="vietnamese"
-                  checked={language === "vietnamese"}
-                  onChange={(e) => setLanguage(e.target.value)}
+                  value="vi"
+                  checked={i18n.language.startsWith('vi')}
+                  onChange={() => handleLanguageChange('vi')}
                   className="w-4 h-4 text-blue-600"
                 />
                 <Label htmlFor="lang-vietnamese" className="text-sm font-medium text-slate-700 cursor-pointer">
-                  Vietnamese
+                  {t('vietnamese')}
                 </Label>
               </div>
             </CardContent>
           </Card>
-
-          {/* PDF Open Mode Section */}
           <Card>
             <CardHeader className="pb-3">
               <div className="flex items-center gap-3">
                 <FileText className="w-5 h-5 text-slate-600" />
-                <CardTitle className="text-lg">Open PDF File</CardTitle>
+                <CardTitle className="text-lg">{t('open_pdf_file')}</CardTitle>
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -341,7 +327,7 @@ const SettingsModal = ({ open, onOpenChange }) => {
                   className="w-4 h-4 text-blue-600"
                 />
                 <Label htmlFor="pdf-new-card" className="text-sm font-medium text-slate-700 cursor-pointer">
-                  New Card
+                  {t('new_card')}
                 </Label>
               </div>
               <div className="flex items-center gap-3">
@@ -355,7 +341,7 @@ const SettingsModal = ({ open, onOpenChange }) => {
                   className="w-4 h-4 text-blue-600"
                 />
                 <Label htmlFor="pdf-preview" className="text-sm font-medium text-slate-700 cursor-pointer">
-                  Preview
+                  {t('preview')}
                 </Label>
               </div>
             </CardContent>

@@ -12,8 +12,12 @@ import phygenLogo from '../assets/icons/phygen-icon.png';
 import googleIcon from '../assets/icons/google-icon.png';
 import api from '../config/axios';
 import { ToastContainer, toast } from 'react-toastify';
+import { useAuth } from '../context/AuthContext';
+import { useTranslation } from 'react-i18next';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 const Signup = () => {
+  const { signUpWithEmail } = useAuth();
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -25,6 +29,7 @@ const Signup = () => {
     confirmPassword: ''
   });
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -41,7 +46,7 @@ const Signup = () => {
 
     // Validate form data
     if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword) {
-      toast.error('Vui lòng điền đầy đủ thông tin', {
+      toast.error(t('error_fill_all_fields'), {
         position: "top-center",
         theme: "light",
         autoClose: 2000
@@ -51,7 +56,7 @@ const Signup = () => {
     }
 
     if (formData.password !== formData.confirmPassword) {
-      toast.error('Mật khẩu xác nhận không khớp', {
+      toast.error(t('error_password_mismatch'), {
         position: "top-center",
         theme: "light",
         autoClose: 2000
@@ -61,7 +66,7 @@ const Signup = () => {
     }
 
     if (formData.password.length < 6) {
-      toast.error('Mật khẩu phải có ít nhất 6 ký tự', {
+      toast.error(t('error_password_too_short'), {
         position: "top-center",
         theme: "light",
         autoClose: 2000
@@ -91,7 +96,7 @@ const Signup = () => {
       }
     } catch (error) {
       console.error('Lỗi đăng ký:', error);
-      toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi đăng ký. Vui lòng thử lại.', {
+      toast.error(error.response?.data?.message || t('error_signup_failed'), {
         position: "top-center",
         theme: "light",
         autoClose: 2000
@@ -112,22 +117,22 @@ const Signup = () => {
         message: error.message
       });
       
-      let errorMessage = 'Có lỗi xảy ra khi đăng ký';
+      let errorMessage = t('error_signup_failed');
       switch (error.code) {
         case 'auth/popup-closed-by-user':
-          errorMessage = 'Cửa sổ đăng ký đã bị đóng. Vui lòng thử lại.';
+          errorMessage = t('error_popup_closed');
           break;
         case 'auth/popup-blocked':
-          errorMessage = 'Trình duyệt đã chặn cửa sổ popup. Vui lòng cho phép popup và thử lại.';
+          errorMessage = t('error_popup_blocked');
           break;
         case 'auth/cancelled-popup-request':
-          errorMessage = 'Yêu cầu đăng ký đã bị hủy. Vui lòng thử lại.';
+          errorMessage = t('error_popup_cancelled');
           break;
         case 'auth/network-request-failed':
-          errorMessage = 'Lỗi kết nối mạng. Vui lòng kiểm tra kết nối internet của bạn.';
+          errorMessage = t('error_network_failed');
           break;
         default:
-          errorMessage = `Lỗi đăng ký: ${error.message}`;
+          errorMessage = `${t('error_signup_default')}: ${error.message}`;
       }
       toast.error(errorMessage, {
         position: "top-center",
@@ -147,19 +152,22 @@ const Signup = () => {
           <img src={phygenLogo} alt="PhyGen Logo" className="w-16 h-16" />
         </div>
         <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-          Create account
+          {t('sign_up_title')}
         </h1>
-        <p className="text-slate-600 mt-2">Join PhyGen and start managing your exams</p>
+        <p className="text-slate-600 mt-2">{t('sign_up_subtitle')}</p>
       </div>
 
       {/* Form Card */}
       <Card className="w-full max-w-md shadow-xl border-0 bg-white/80 backdrop-blur">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-semibold text-center text-slate-800">
-            Sign up
+            {t('sign_up')}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="absolute top-4 right-4 z-10">
+            <LanguageSwitcher />
+          </div>
           {error && (
             <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
               <AlertCircle className="w-4 h-4" />
@@ -170,7 +178,7 @@ const Signup = () => {
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div className="space-y-2">
               <Label htmlFor="name" className="text-slate-700 font-medium">
-                Full Name
+                {t('full_name')}
               </Label>
               <div className="relative flex items-center h-9">
                 <span className="absolute left-3 inset-y-0 flex items-center">
@@ -182,7 +190,7 @@ const Signup = () => {
                   name="name"
                   value={formData.name}
                   onChange={handleChange}
-                  placeholder="Enter your full name"
+                  placeholder={t('enter_your_full_name')}
                   className="pl-10 pr-3 border-slate-200 focus:border-blue-500 focus:ring-blue-500"
                   required
                 />
@@ -191,7 +199,7 @@ const Signup = () => {
             
             <div className="space-y-2">
               <Label htmlFor="email" className="text-slate-700 font-medium">
-                Email
+                {t('email')}
               </Label>
               <div className="relative flex items-center h-9">
                 <span className="absolute left-3 inset-y-0 flex items-center">
@@ -203,7 +211,7 @@ const Signup = () => {
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  placeholder="Enter your email address"
+                  placeholder={t('enter_your_email_address')}
                   className="pl-10 pr-3 border-slate-200 focus:border-blue-500 focus:ring-blue-500"
                   required
                 />
@@ -212,7 +220,7 @@ const Signup = () => {
             
             <div className="space-y-2">
               <Label htmlFor="password" className="text-slate-700 font-medium">
-                Password
+                {t('password')}
               </Label>
               <div className="relative flex items-center h-9">
                 <span className="absolute left-3 inset-y-0 flex items-center">
@@ -224,7 +232,7 @@ const Signup = () => {
                   name="password"
                   value={formData.password}
                   onChange={handleChange}
-                  placeholder="Create a password"
+                  placeholder={t('create_a_password')}
                   className="pl-10 pr-10 border-slate-200 focus:border-blue-500 focus:ring-blue-500"
                   required
                 />
@@ -242,7 +250,7 @@ const Signup = () => {
             
             <div className="space-y-2">
               <Label htmlFor="confirmPassword" className="text-slate-700 font-medium">
-                Confirm Password
+                {t('confirm_password')}
               </Label>
               <div className="relative flex items-center h-9">
                 <span className="absolute left-3 inset-y-0 flex items-center">
@@ -254,7 +262,7 @@ const Signup = () => {
                   name="confirmPassword"
                   value={formData.confirmPassword}
                   onChange={handleChange}
-                  placeholder="Confirm your password"
+                  placeholder={t('confirm_your_password')}
                   className="pl-10 pr-10 border-slate-200 focus:border-blue-500 focus:ring-blue-500"
                   required
                 />
@@ -275,14 +283,14 @@ const Signup = () => {
               disabled={isLoading}
               className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium py-2"
             >
-              {isLoading ? 'Creating account...' : 'Create account'}
+              {isLoading ? t('creating_account') : t('sign_up')}
             </Button>
           </form>
 
           <div className="relative my-6">
             <Separator />
             <div className="absolute inset-0 flex items-center justify-center">
-              <span className="bg-white px-2 text-slate-500 text-sm">or continue with</span>
+              <span className="bg-white px-2 text-slate-500 text-sm">{t('or_continue_with')}</span>
             </div>
           </div>
 
@@ -292,13 +300,13 @@ const Signup = () => {
             className="w-full border-slate-200 hover:bg-slate-50 text-slate-700"
           >
             <img src={googleIcon} alt="Google" className="w-5 h-5 mr-2" />
-            Continue with Google
+            {t('continue_with_google')}
           </Button>
 
           <div className="text-center text-sm text-slate-600">
-            Already have an account?{' '}
+            {t('already_have_account')}{' '}
             <Link to="/signin" className="text-blue-600 hover:text-blue-700 font-medium">
-              Sign in
+              {t('sign_in_here')}
             </Link>
           </div>
         </CardContent>
@@ -306,11 +314,11 @@ const Signup = () => {
 
       {/* Footer */}
       <div className="mt-8 text-center text-xs text-slate-500 space-x-4">
-        <Link to="/privacy-policy" className="hover:text-slate-700">Terms of Service</Link>
+        <Link to="/privacy-policy" className="hover:text-slate-700">{t('terms_of_service')}</Link>
         <span>•</span>
-        <Link to="/privacy-policy" className="hover:text-slate-700">Privacy Policy</Link>
+        <Link to="/privacy-policy" className="hover:text-slate-700">{t('privacy_policy')}</Link>
         <span>•</span>
-        <Link to="/data-deletion" className="hover:text-slate-700">Data Deletion</Link>
+        <Link to="/data-deletion" className="hover:text-slate-700">{t('data_deletion')}</Link>
       </div>
     </div>
   );
