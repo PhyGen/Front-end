@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -40,6 +41,7 @@ const Placeholder = ({ label, icon: Icon, description, color = "blue", children 
 
 const MainScreen = () => {
   const { selectedKey, setSelectedKey } = useSidebar();
+  const { t } = useTranslation();
   const [createType, setCreateType] = useState(null);
 
   const handleSelectType = (type) => {
@@ -59,9 +61,9 @@ const MainScreen = () => {
       case 'myExam':
         content = (
           <Placeholder 
-            label="My Exam" 
+            label={t('my_exam')} 
             icon={BookOpen} 
-            description="Manage and organize your personal exam collection"
+            description={t('my_exam_description')}
             color="blue"
           >
             <MyExam />
@@ -71,9 +73,9 @@ const MainScreen = () => {
       case 'shared':
         content = (
           <Placeholder
-            label="Shared with me"
+            label={t('shared_with_me')}
             icon={Share2}
-            description="Access exams shared by other users"
+            description={t('shared_with_me_description')}
             color="green"
           >
             {/* Nội dung động cho Shared with me */}
@@ -86,9 +88,9 @@ const MainScreen = () => {
       case 'starred':
         content = (
           <Placeholder
-            label="Starred"
+            label={t('starred')}
             icon={Star}
-            description="Your favorite and bookmarked content"
+            description={t('starred_description')}
             color="yellow"
           >
             {/* Nội dung động cho Starred */}
@@ -98,9 +100,9 @@ const MainScreen = () => {
       case 'ai':
         content = (
           <Placeholder
-            label="AI Generate"
+            label={t('ai_generate')}
             icon={Bot}
-            description="Create exams and questions using AI assistance"
+            description={t('ai_generate_description')}
             color="indigo"
           >
             {/* Nội dung động cho AI Generate */}
@@ -110,9 +112,9 @@ const MainScreen = () => {
       case 'spam':
         content = (
           <Placeholder
-            label="Spam Content"
+            label={t('spam_content')}
             icon={AlertTriangle}
-            description="Review and manage flagged content"
+            description={t('spam_content_description')}
             color="red"
           >
             {/* Nội dung động cho Spam Content */}

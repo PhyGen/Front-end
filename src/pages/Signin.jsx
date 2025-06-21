@@ -14,6 +14,8 @@ import googleIcon from '../assets/icons/google-icon.png';
 import api from '../config/axios';
 import { ToastContainer, toast } from 'react-toastify';
 import { jwtDecode } from 'jwt-decode';
+import { useTranslation } from 'react-i18next';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 const SignIn = () => {
   const [error, setError] = useState('');
@@ -24,7 +26,8 @@ const SignIn = () => {
     password: ''
   });
   const navigate = useNavigate();
-  const { user, setUser } = useAuth();
+  const { user, setUser, signInWithEmail } = useAuth();
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (user) {
@@ -47,7 +50,7 @@ const SignIn = () => {
 
     // Validate form data
     if (!formData.email || !formData.password) {
-      toast.error('Vui lòng điền đầy đủ thông tin', {
+      toast.error(t('error_fill_all_fields'), {
         position: "top-center",
         theme: "light",
         autoClose: 2000
@@ -84,7 +87,7 @@ const SignIn = () => {
       }
     } catch (error) {
       console.error('Lỗi đăng nhập:', error);
-      toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi đăng nhập. Vui lòng thử lại.', {
+      toast.error(error.response?.data?.message || t('error_login_failed'), {
         position: "top-center",
         theme: "light",
         autoClose: 2000
@@ -107,19 +110,19 @@ const SignIn = () => {
       
       switch (error.code) {
         case 'auth/popup-closed-by-user':
-          setError('Cửa sổ đăng nhập đã bị đóng. Vui lòng thử lại.');
+          setError(t('error_popup_closed'));
           break;
         case 'auth/popup-blocked':
-          setError('Trình duyệt đã chặn cửa sổ popup. Vui lòng cho phép popup và thử lại.');
+          setError(t('error_popup_blocked'));
           break;
         case 'auth/cancelled-popup-request':
-          setError('Yêu cầu đăng nhập đã bị hủy. Vui lòng thử lại.');
+          setError(t('error_popup_cancelled'));
           break;
         case 'auth/network-request-failed':
-          setError('Lỗi kết nối mạng. Vui lòng kiểm tra kết nối internet của bạn.');
+          setError(t('error_network_failed'));
           break;
         default:
-          setError(`Lỗi đăng nhập: ${error.message}`);
+          setError(`${t('error_login_default')}: ${error.message}`);
       }
     }
   };
@@ -134,19 +137,22 @@ const SignIn = () => {
           <img src={phygenLogo} alt="PhyGen Logo" className="w-16 h-16" />
         </div>
         <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-          Welcome back
+          {t('welcome_back')}
         </h1>
-        <p className="text-slate-600 mt-2">Sign in to your PhyGen account</p>
+        <p className="text-slate-600 mt-2">{t('sign_in_to_your_phygen_account')}</p>
       </div>
 
       {/* Form Card */}
       <Card className="w-full max-w-md shadow-xl border-0 bg-white/80 backdrop-blur">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-semibold text-center text-slate-800">
-            Sign in
+            {t('sign_in')}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="absolute top-4 right-4 z-10">
+            <LanguageSwitcher />
+          </div>
           {error && (
             <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
               <AlertCircle className="w-4 h-4" />
@@ -157,7 +163,7 @@ const SignIn = () => {
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div className="space-y-2">
               <Label htmlFor="email" className="text-slate-700 font-medium">
-                Email
+                {t('email')}
               </Label>
               <div className="relative flex items-center h-9">
                 <span className="absolute left-3 inset-y-0 flex items-center">
@@ -169,7 +175,7 @@ const SignIn = () => {
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  placeholder="Enter your email"
+                  placeholder={t('enter_your_email')}
                   className="pl-10 pr-3 border-slate-200 focus:border-blue-500 focus:ring-blue-500"
                   required
                 />
@@ -178,7 +184,7 @@ const SignIn = () => {
             
             <div className="space-y-2">
               <Label htmlFor="password" className="text-slate-700 font-medium">
-                Password
+                {t('password')}
               </Label>
               <div className="relative flex items-center h-9">
                 <span className="absolute left-3 inset-y-0 flex items-center">
@@ -190,7 +196,7 @@ const SignIn = () => {
                   name="password"
                   value={formData.password}
                   onChange={handleChange}
-                  placeholder="Enter your password"
+                  placeholder={t('enter_your_password')}
                   className="pl-10 pr-12 border-slate-200 focus:border-blue-500 focus:ring-blue-500"
                   required
                 />
@@ -211,14 +217,14 @@ const SignIn = () => {
               disabled={isLoading}
               className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium py-2"
             >
-              {isLoading ? 'Signing in...' : 'Sign in'}
+              {isLoading ? t('signing_in') : t('sign_in')}
             </Button>
           </form>
 
           <div className="relative my-6">
             <Separator />
             <div className="absolute inset-0 flex items-center justify-center">
-              <span className="bg-white px-2 text-slate-500 text-sm">or continue with</span>
+              <span className="bg-white px-2 text-slate-500 text-sm">{t('or_continue_with')}</span>
             </div>
           </div>
 
@@ -228,13 +234,13 @@ const SignIn = () => {
             className="w-full border-slate-200 hover:bg-slate-50 text-slate-700"
           >
             <img src={googleIcon} alt="Google" className="w-5 h-5 mr-2" />
-            Continue with Google
+            {t('continue_with_google')}
           </Button>
 
           <div className="text-center text-sm text-slate-600">
-            Don't have an account?{' '}
+            {t('dont_have_account')} {' '}
             <Link to="/signup" className="text-blue-600 hover:text-blue-700 font-medium">
-              Sign up
+              {t('sign_up_here')}
             </Link>
           </div>
         </CardContent>
@@ -242,11 +248,11 @@ const SignIn = () => {
 
       {/* Footer */}
       <div className="mt-8 text-center text-xs text-slate-500 space-x-4">
-        <Link to="/privacy-policy" className="hover:text-slate-700">Terms of Service</Link>
+        <Link to="/privacy-policy" className="hover:text-slate-700">{t('terms_of_service')}</Link>
         <span>•</span>
-        <Link to="/privacy-policy" className="hover:text-slate-700">Privacy Policy</Link>
+        <Link to="/privacy-policy" className="hover:text-slate-700">{t('privacy_policy')}</Link>
         <span>•</span>
-        <Link to="/data-deletion" className="hover:text-slate-700">Data Deletion</Link>
+        <Link to="/data-deletion" className="hover:text-slate-700">{t('data_deletion')}</Link>
       </div>
     </div>
   );
