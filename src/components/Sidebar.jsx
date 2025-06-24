@@ -49,11 +49,11 @@ const Sidebar = ({ activeKey, onSelect }) => {
                   key={item.key}
                   variant={activeKey === item.key ? "secondary" : "ghost"}
                   onClick={() => onSelect(item.key)}
-                  className={`w-full justify-start gap-3 h-11 ${
-                    activeKey === item.key 
-                      ? 'bg-slate-100 text-slate-900 border border-slate-200' 
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                  }`}
+                  className={`w-full justify-start gap-3 h-11
+                    ${activeKey === item.key
+                      ? 'bg-[#c2e7ff] text-slate-900 border border-slate-200 pointer-events-none'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-[#bab9be]'}
+                  `}
                 >
                   <IconComponent className="w-5 h-5" />
                   <span className="font-medium">{item.label}</span>
