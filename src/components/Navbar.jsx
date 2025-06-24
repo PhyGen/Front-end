@@ -4,8 +4,8 @@ import { useAuth } from '../context/AuthContext';
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
-import { Bell, Settings, Menu, HelpCircle, Moon, AlertCircle, LogOut } from "lucide-react";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent } from "@/components/ui/dropdown-menu";
+import { Bell, Settings, Menu, HelpCircle, Moon, AlertCircle, LogOut, Mail, UserCheck } from "lucide-react";
 import phygenIcon from '../assets/icons/phygen-icon.png';
 import squareMenuIcon from '../assets/icons/square-menu.svg';
 import bellDotIcon from '../assets/icons/bell-dot.svg';
@@ -39,19 +39,16 @@ const Navbar = () => {
             <AvatarImage src={phygenIcon} alt="PhyGen Logo" />
             <AvatarFallback>PG</AvatarFallback>
           </Avatar>
-          <Button variant="ghost" size="icon" className="hover:bg-slate-100">
-            <img src={squareMenuIcon} alt="Menu" className="w-5 h-5" />
-          </Button>
         </div>
         
         <div className="hidden md:flex gap-6">
-          <Button variant="ghost" className="text-slate-600 hover:text-slate-900 font-medium">
+          <Button variant="ghost" className="text-slate-600 font-medium hover:bg-[#1965fe] hover:text-white">
             {t('about')}
           </Button>
-          <Button variant="ghost" className="text-slate-600 hover:text-slate-900 font-medium">
+          <Button variant="ghost" className="text-slate-600 font-medium hover:bg-[#1965fe] hover:text-white">
             {t('feature')}
           </Button>
-          <Button variant="ghost" className="text-slate-600 hover:text-slate-900 font-medium">
+          <Button variant="ghost" className="text-slate-600 font-medium hover:bg-[#1965fe] hover:text-white">
             {t('contact')}
           </Button>
         </div>
@@ -72,16 +69,38 @@ const Navbar = () => {
               </span>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-64 bg-white text-slate-800 border border-slate-200 shadow-xl rounded-xl p-2">
-              <DropdownMenuItem onClick={handleSettingsClick} className="flex items-center gap-3 py-3 px-2 rounded-lg hover:bg-slate-100 focus:bg-slate-100 cursor-pointer">
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                <DropdownMenuItem onClick={handleSettingsClick} className="flex items-center gap-3 py-3 px-2 rounded-lg hover:bg-slate-100 focus:bg-slate-100 cursor-pointer">
                 <Settings className="w-6 h-6 text-slate-500" />
                 <span className="flex-1 font-medium">{t('settings')}</span>
-                <span className="ml-auto text-slate-400">&gt;</span>
               </DropdownMenuItem>
-              <DropdownMenuItem className="flex items-center gap-3 py-3 px-2 rounded-lg hover:bg-slate-100 focus:bg-slate-100 cursor-pointer">
-                <HelpCircle className="w-6 h-6 text-slate-500" />
-                <span className="flex-1 font-medium">{t('help_and_support')}</span>
-                <span className="ml-auto text-slate-400">&gt;</span>
-              </DropdownMenuItem>
+                </DropdownMenuSubTrigger>
+              </DropdownMenuSub>
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger className="flex items-center gap-3 py-3 px-2 rounded-lg hover:bg-slate-100 focus:bg-slate-100 cursor-pointer w-full">
+                  <HelpCircle className="w-6 h-6 text-slate-500" />
+                  <span className="flex-1 font-medium text-left">{t('help_and_support')}</span>
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent className="w-64 bg-white text-slate-800 border border-slate-200 shadow-xl rounded-xl p-2">
+                  <DropdownMenuItem className="flex items-center gap-3 py-3 px-2 rounded-lg hover:bg-slate-100 focus:bg-slate-100 cursor-pointer">
+                    <HelpCircle className="w-6 h-6 text-slate-500" />
+                    <span className="flex-1 font-medium">{t('help_center')}</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="flex items-center gap-3 py-3 px-2 rounded-lg hover:bg-slate-100 focus:bg-slate-100 cursor-pointer">
+                    <UserCheck className="w-6 h-6 text-slate-500" />
+                    <span className="flex-1 font-medium">{t('account_status')}</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="flex items-center gap-3 py-3 px-2 rounded-lg hover:bg-slate-100 focus:bg-slate-100 cursor-pointer">
+                    <Mail className="w-6 h-6 text-slate-500" />
+                    <span className="flex-1 font-medium">{t('support_inbox')}</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="flex items-center gap-3 py-3 px-2 rounded-lg hover:bg-slate-100 focus:bg-slate-100 cursor-pointer">
+                    <AlertCircle className="w-6 h-6 text-slate-500" />
+                    <span className="flex-1 font-medium">{t('report_a_problem')}</span>
+                  </DropdownMenuItem>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
               <DropdownMenuItem className="flex items-center gap-3 py-3 px-2 rounded-lg hover:bg-slate-100 focus:bg-slate-100 cursor-pointer">
                 <Moon className="w-6 h-6 text-slate-500" />
                 <span className="flex-1 font-medium">{t('display_and_accessibility')}</span>
