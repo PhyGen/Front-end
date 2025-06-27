@@ -16,11 +16,16 @@ const CreateTypeSelect = () => {
     setSelectedType(null);
   };
 
+  const handleWizardBack = () => {
+    setSelectedType(null);
+  };
+
   if (selectedType) {
     return (
       <MultiStepWizard
         type={selectedType}
         onComplete={handleWizardComplete}
+        onBack={handleWizardBack}
       />
     );
   }

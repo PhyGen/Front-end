@@ -6,12 +6,27 @@ import { Slider } from "@/components/ui/slider";
 import clsx from 'clsx';
 import semester1 from '@/assets/icons/semester1-logo.jpg';
 import semester2 from '@/assets/icons/semester2-logo.jpg';
+import exam45M from '@/assets/icons/exam-45 minutes.svg';
+import semesterExam from '@/assets/icons/semester exam.svg';
+import avatarIcon from '@/assets/icons/avatar.jpg';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 
-const steps = [
+const stepsQuestion = [
   { label: 'Grade Level' },
   { label: 'Semester' },
   { label: 'Chapter' },
   { label: 'Lesson' },
+  { label: 'Difficulty level' },
+];
+
+const stepsExam = [
+  { label: 'Grade Level' },
+  { label: 'Semester' },
+  { label: 'Type' },
+  { label: 'Questions' },
   { label: 'Difficulty level' },
 ];
 
@@ -43,13 +58,36 @@ const lessons = [
 
 const difficultyLevels = ['Very Easy', 'Easy', 'Medium', 'Hard', 'Very Hard'];
 
-const MultiStepWizard = ({ onComplete, type }) => {
+const examTypes = [
+  { id: '45min', label: '45-minute exam', icon: exam45M },
+  { id: 'semester', label: 'Semester exam', icon: semesterExam },
+];
+
+const questionList = [
+  { id: 1, title: 'The Question', avatar: avatarIcon },
+  { id: 2, title: 'The Question', avatar: avatarIcon },
+  // ... có thể thêm nhiều câu hỏi khác
+];
+
+const MultiStepWizard = ({ onComplete, type, onBack }) => {
   const [step, setStep] = useState(0);
   const [grade, setGrade] = useState(null);
   const [semester, setSemester] = useState(null);
   const [chapter, setChapter] = useState(null);
   const [lesson, setLesson] = useState(null);
   const [difficulty, setDifficulty] = useState(0); // 0-4 corresponding to difficultyLevels
+  const [selectedExamType, setSelectedExamType] = useState(null);
+  const [selectedQuestions, setSelectedQuestions] = useState([]);
+  const [searchModalOpen, setSearchModalOpen] = useState(false);
+  const [filterChapter, setFilterChapter] = useState(null);
+  const [filterLesson, setFilterLesson] = useState(null);
+  const [filterDifficulty, setFilterDifficulty] = useState(null);
+
+  const handleSelectQuestion = (id) => {
+    setSelectedQuestions((prev) =>
+      prev.includes(id) ? prev.filter((q) => q !== id) : [...prev, id]
+    );
+  };
 
   // Render step content
   let content = null;
@@ -74,7 +112,7 @@ const MultiStepWizard = ({ onComplete, type }) => {
           ))}
         </div>
         <div className="flex justify-between">
-          <Button disabled>Back</Button>
+          <Button onClick={onBack} className="bg-blue-500 hover:bg-blue-600">Back</Button>
           <Button onClick={() => setStep(1)} disabled={!grade} className="bg-blue-500 hover:bg-blue-600">Accept</Button>
         </div>
       </>
@@ -102,6 +140,139 @@ const MultiStepWizard = ({ onComplete, type }) => {
         <div className="flex justify-between">
           <Button onClick={() => setStep(0)} className="bg-blue-500 hover:bg-blue-600">Back</Button>
           <Button onClick={() => setStep(2)} disabled={!semester} className="bg-blue-500 hover:bg-blue-600">Accept</Button>
+        </div>
+      </>
+    );
+  } else if (step === 2 && type === 'exam') {
+    content = (
+      <>
+        <div className="text-2xl font-semibold text-center mb-6">Select type for your exam</div>
+        <div className="flex gap-8 justify-center mb-8">
+          {examTypes.map((et) => (
+            <Card
+              key={et.id}
+              className={clsx(
+                'w-64 h-64 flex flex-col items-center justify-center cursor-pointer border-2 transition',
+                selectedExamType === et.id ? 'border-blue-500 shadow-lg' : 'border-slate-200 hover:border-blue-300'
+              )}
+              onClick={() => setSelectedExamType(et.id)}
+            >
+              <CardContent className="flex flex-col items-center justify-center h-full">
+                <img src={et.icon} alt={et.label} className="w-24 h-24 mb-4" />
+                <span className="text-xl font-bold">{et.label}</span>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <div className="flex justify-between">
+          <Button onClick={() => setStep(1)} className="bg-blue-500 hover:bg-blue-600">Back</Button>
+          <Button onClick={() => setStep(3)} disabled={!selectedExamType} className="bg-blue-500 hover:bg-blue-600">Accept</Button>
+        </div>
+      </>
+    );
+  } else if (step === 3 && type === 'exam') {
+    content = (
+      <>
+        <div className="text-2xl font-semibold text-center mb-6">Select questions for your exam</div>
+        <div className="flex justify-center mb-4">
+          <Input
+            placeholder="Search or filter questions..."
+            className="w-full max-w-md cursor-pointer"
+            readOnly
+            onClick={() => setSearchModalOpen(true)}
+          />
+        </div>
+        <Dialog open={searchModalOpen} onOpenChange={setSearchModalOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="mb-4 text-2xl">Filter Questions</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-6 pt-2">
+              <div className="flex flex-col gap-2">
+                <Label className="mb-1">Chapter</Label>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="w-full justify-between">
+                      {filterChapter ? chapters.find(c => c.id === filterChapter)?.title : 'Select chapter'}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-full">
+                    {chapters.map(c => (
+                      <DropdownMenuItem key={c.id} onClick={() => setFilterChapter(c.id)}>
+                        {c.title}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label className="mb-1">Lesson</Label>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="w-full justify-between">
+                      {filterLesson ? lessons.find(l => l.id === filterLesson)?.title : 'Select lesson'}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-full">
+                    {lessons.map(l => (
+                      <DropdownMenuItem key={l.id} onClick={() => setFilterLesson(l.id)}>
+                        {l.title}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label className="mb-1">Difficulty Level</Label>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="w-full justify-between">
+                      {filterDifficulty !== null ? difficultyLevels[filterDifficulty] : 'Select difficulty'}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-full">
+                    {difficultyLevels.map((level, idx) => (
+                      <DropdownMenuItem key={level} onClick={() => setFilterDifficulty(idx)}>
+                        {level}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+              <div className="flex justify-end gap-2 pt-4">
+                <Button variant="outline" onClick={() => {
+                  setFilterChapter(null); setFilterLesson(null); setFilterDifficulty(null); setSearchModalOpen(false);
+                }}>Cancel</Button>
+                <Button 
+                  onClick={() => setSearchModalOpen(false)}
+                  className="bg-blue-500 hover:bg-blue-600 text-white"
+                >
+                  Apply
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+        <div className="flex gap-8 justify-center mb-8">
+          {questionList.map((q) => (
+            <Card
+              key={q.id}
+              className={clsx(
+                'w-48 h-64 flex flex-col items-center justify-center cursor-pointer border-2 transition',
+                selectedQuestions.includes(q.id) ? 'border-blue-500 shadow-lg bg-blue-50' : 'border-slate-200 hover:border-blue-300'
+              )}
+              onClick={() => handleSelectQuestion(q.id)}
+            >
+              <CardContent className="flex flex-col items-center justify-center h-full">
+                <img src={q.avatar} alt={q.title} className="w-20 h-20 mb-2 rounded-full" />
+                <span className="text-lg font-medium">{q.title}</span>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <div className="flex justify-between">
+          <Button onClick={() => setStep(2)} className="bg-blue-500 hover:bg-blue-600">Back</Button>
+          <Button onClick={() => setStep(4)} disabled={selectedQuestions.length === 0} className="bg-blue-500 hover:bg-blue-600">Accept</Button>
         </div>
       </>
     );
@@ -195,8 +366,8 @@ const MultiStepWizard = ({ onComplete, type }) => {
   return (
     <Card className="max-w-2xl mx-auto mt-8 p-4">
       <CardHeader>
-        <Stepper value={step} max={steps.length - 1} className="mb-6">
-          {steps.map((s, idx) => (
+        <Stepper value={step} max={(type === 'exam' ? stepsExam.length : stepsQuestion.length) - 1} className="mb-6">
+          {( type === 'exam' ? stepsExam : stepsQuestion ).map((s, idx) => (
             <Step key={s.label} value={idx}>
               {s.label}
             </Step>
