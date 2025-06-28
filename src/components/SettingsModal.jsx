@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { X as CloseIcon } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import api from '@/config/axios';
 import { useAuth } from '../context/AuthContext';
 import avatarIcon from '../assets/icons/avatar.jpg';
 import { useTranslation } from 'react-i18next';
+import { uploadImgBBOneFile } from '@/config/imgBB';
 
 const RadixModal = ({ open, onOpenChange, children }) => {
   const { t } = useTranslation();
@@ -77,11 +78,13 @@ const SettingsModal = ({ open, onOpenChange }) => {
   const { user } = useAuth();
   const { t, i18n } = useTranslation();
   const [isEditing, setIsEditing] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef(null);
   const [profileData, setProfileData] = useState({
     avatar: null,
     fullName: "",
     email: "",
-    phoneNumber: null
+    phoneNumber: ""
   });
   const [startPage, setStartPage] = useState(() => localStorage.getItem('startPage') || 'home');
   const [pdfOpenMode, setPdfOpenMode] = useState("new-card");
@@ -118,21 +121,87 @@ const SettingsModal = ({ open, onOpenChange }) => {
     }
   }, [open, user]);
 
-  const handleEditToggle = () => {
+  const handleEditToggle = async () => {
     if (isEditing) {
+      // Lưu thông tin profile
       console.log("Saving profile data:", profileData);
+      try {
+        const response = await api.put(`/Account/${user.id}`, {
+          fullName: profileData.fullName,
+          email: profileData.email,
+          phoneNumber: profileData.phoneNumber,
+          avatarUrl: profileData.avatar
+        });
+        
+        if (response.status === 200) {
+          alert('Profile updated successfully!');
+          // Có thể cập nhật user context nếu cần
+        }
+      } catch (error) {
+        console.error('Error saving profile:', error);
+        alert('Failed to save profile. Please try again.');
+      }
     }
     setIsEditing(!isEditing);
   };
 
-  const handleAvatarUpload = (event) => {
+  const handleAvatarUpload = async (event) => {
+    console.log('handleAvatarUpload called', event);
+    console.log('Files:', event.target.files);
+    
     const file = event.target.files[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setProfileData(prev => ({ ...prev, avatar: e.target.result }));
-      };
-      reader.readAsDataURL(file);
+      console.log('File selected:', file.name, file.size, file.type);
+      
+      // Kiểm tra kích thước file (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('File size should be less than 5MB');
+        return;
+      }
+      
+      // Kiểm tra loại file
+      if (!file.type.startsWith('image/')) {
+        alert('Please select an image file');
+        return;
+      }
+
+      setIsUploading(true);
+      
+      try {
+        // Upload ảnh lên imgBB
+        console.log('Uploading to imgBB...');
+        const imageUrl = await uploadImgBBOneFile(file);
+        console.log('Upload successful, image URL:', imageUrl);
+        
+        // Cập nhật state với URL từ imgBB
+        setProfileData(prev => ({ ...prev, avatar: imageUrl }));
+        
+        // TODO: Có thể gọi API để lưu URL vào database
+        // await api.put(`/Account/${user.id}`, { avatarUrl: imageUrl });
+        
+      } catch (error) {
+        console.error('Error uploading to imgBB:', error);
+        alert('Failed to upload image. Please try again.');
+      } finally {
+        setIsUploading(false);
+      }
+    } else {
+      console.log('No file selected');
+    }
+  };
+
+  const handleFileInputClick = () => {
+    console.log('File input clicked');
+    // Reset input value để có thể chọn cùng file nhiều lần
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleUploadButtonClick = () => {
+    console.log('Upload button clicked');
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
     }
   };
 
@@ -176,25 +245,38 @@ const SettingsModal = ({ open, onOpenChange }) => {
                 <div className="space-y-2">
                   <Label className="text-sm font-medium text-slate-700">{t('avatar')}</Label>
                   <div className="flex items-center gap-4">
-                    <Avatar className="h-16 w-16">
-                      <AvatarImage src={profileData.avatar || avatarIcon} alt="Profile" />
-                      <AvatarFallback>JD</AvatarFallback>
-                    </Avatar>
+                    <div className="relative">
+                      <Avatar className="h-16 w-16">
+                        <AvatarImage src={profileData.avatar || avatarIcon} alt="Profile" />
+                        <AvatarFallback>JD</AvatarFallback>
+                      </Avatar>
+                      {isUploading && (
+                        <div className="absolute inset-0 bg-black/20 rounded-full flex items-center justify-center">
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                      )}
+                    </div>
                     {isEditing && (
                       <div className="flex items-center gap-2">
                         <input
+                          ref={fileInputRef}
                           type="file"
-                          id="avatar-upload"
                           accept="image/*"
                           onChange={handleAvatarUpload}
+                          onClick={handleFileInputClick}
                           className="hidden"
                         />
-                        <label htmlFor="avatar-upload">
-                          <Button variant="outline" size="sm" className="flex items-center gap-2">
-                            <Upload className="w-4 h-4" />
-                            {t('upload_image')}
-                          </Button>
-                        </label>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="flex items-center gap-2 hover:bg-blue-50 hover:border-blue-300"
+                          disabled={isUploading}
+                          onClick={handleUploadButtonClick}
+                          type="button"
+                        >
+                          <Upload className="w-4 h-4" />
+                          {isUploading ? t('uploading') : t('upload_image')}
+                        </Button>
                       </div>
                     )}
                   </div>
@@ -221,7 +303,7 @@ const SettingsModal = ({ open, onOpenChange }) => {
                 <div className="space-y-2">
                   <Label className="text-sm font-medium text-slate-700">{t('phone_number')}</Label>
                   <Input
-                    value={profileData.phoneNumber}
+                    value={profileData.phoneNumber || ''}
                     onChange={(e) => handleProfileChange('phoneNumber', e.target.value)}
                     disabled={!isEditing}
                     className="max-w-md"

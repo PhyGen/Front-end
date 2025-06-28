@@ -193,5 +193,7 @@
   "move_to_trash": "Đã chuyển vào thùng rác",
   "invalid_date_range" : "Thời gian không hợp lệ",
   "create_question_description": "Tạo câu hỏi cho bài kiểm tra",
-  "create_exam_description": "Tạo bài kiểm tra cho học sinh"
+  "create_exam_description": "Tạo bài kiểm tra cho học sinh",
+  "statistic": "Thống kê",
+  "question_bank": "Ngân hàng câu hỏi"
 } 

@@ -17,7 +17,7 @@ import {
   Users,
   Sparkles
 } from "lucide-react";
-import HomeBox from '../components/Home';
+import HomeBox from './Home';
 import { useSidebar } from '../context/SidebarContext';
 import CreateTypeSelect from "@/components/CreateTypeSelect";
 import MyExam from "./MyExam";

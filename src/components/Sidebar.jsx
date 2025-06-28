@@ -57,11 +57,6 @@ const Sidebar = ({ activeKey, onSelect }) => {
                 >
                   <IconComponent className="w-5 h-5" />
                   <span className="font-medium">{item.label}</span>
-                  {item.key === 'myExam' && (
-                    <Badge variant="secondary" className="ml-auto text-xs">
-                      3
-                    </Badge>
-                  )}
                 </Button>
               );
             })}

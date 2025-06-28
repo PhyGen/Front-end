@@ -2,7 +2,6 @@ import MainScreen from "../pages/MainScreen";
 import Landing from "../pages/Landing";
 import Signin from "../pages/Signin";
 import Signup from "../pages/Signup";
-import Profile from "../pages/Profile";
 import AuthWrapper from "../components/AuthWrapper";
 import PrivacyPolicy from "../pages/PrivacyPolicy";
 import DataDeletion from "../pages/DataDeletion";
@@ -19,7 +18,6 @@ const publicRoutes = [
 
 const privateRoutes = [
     { path: '/', component: MainScreen, layout: DefaultLayout, wrapper: AuthWrapper },
-    { path: '/profile', component: Profile, layout: DefaultLayout, wrapper: AuthWrapper },
     // { path: '/payment', component: Payment, layout: HeaderOnly, role: 'user'},
     // { path: '/customer', component: CustomerLayout,layout : null, role: 'user'},
     // { path: '/admin',component: AdminLayout, layout: null, role: 'admin'},
