@@ -193,5 +193,7 @@
   "move_to_trash": "Moved to trash",
   "invalid_date_range": "Invalid date range",
   "create_question_description": "Create question for exam",
-  "create_exam_description": "Create exam for students"
+  "create_exam_description": "Create exam for students",
+  "statistic": "Statistic",
+  "question_bank": "Question Bank"
 } 
