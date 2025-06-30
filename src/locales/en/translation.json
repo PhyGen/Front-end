@@ -195,5 +195,13 @@
   "create_question_description": "Create question for exam",
   "create_exam_description": "Create exam for students",
   "statistic": "Statistic",
-  "question_bank": "Question Bank"
+  "question_bank": "Question Bank",
+  "footer_description": "PhyGen is an AI-powered Physics test generation platform, helping teachers and students save time and optimize teaching and learning.",
+  "quick_links": "Quick Links",
+  "about_us": "About Us",
+  "faq": "FAQ",
+  "legal": "Legal",
+  "follow_us": "Follow Us",
+  "copyright": "PhyGen. All rights reserved.",
+  "made_by": "A product of TDTU students."
 } 

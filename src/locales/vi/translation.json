@@ -195,5 +195,13 @@
   "create_question_description": "Tạo câu hỏi cho bài kiểm tra",
   "create_exam_description": "Tạo bài kiểm tra cho học sinh",
   "statistic": "Thống kê",
-  "question_bank": "Ngân hàng câu hỏi"
+  "question_bank": "Ngân hàng câu hỏi",
+  "footer_description": "PhyGen là nền tảng tạo đề thi trắc nghiệm Vật lý ứng dụng AI, giúp giáo viên và học sinh tiết kiệm thời gian, tối ưu hóa quá trình dạy và học.",
+  "quick_links": "Liên kết nhanh",
+  "about_us": "Về chúng tôi",
+  "faq": "Câu hỏi thường gặp",
+  "legal": "Pháp lý",
+  "follow_us": "Theo dõi chúng tôi",
+  "copyright": "PhyGen. Đã đăng ký bản quyền.",
+  "made_by": "Một sản phẩm của nhóm sinh viên TDTU."
 } 
