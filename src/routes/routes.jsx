@@ -6,8 +6,8 @@ import AuthWrapper from "../components/AuthWrapper";
 import PrivacyPolicy from "../pages/PrivacyPolicy";
 import DataDeletion from "../pages/DataDeletion";
 import DefaultLayout from "../layouts/defaultLayout/defaultLayout";
-import Moderator from "../pages/Moderator";
-import Admin from "../pages/Admin";
+import ModLayout from "../pages/Mod/ModLayout";
+import Admin from "../pages/Admin/Admin";
 
 const publicRoutes = [
     { path: '/landing', component: Landing, layout: null },
@@ -19,7 +19,7 @@ const publicRoutes = [
 
 const privateRoutes = [
     { path: '/', component: MainScreen, layout: DefaultLayout, wrapper: AuthWrapper },
-    { path: '/mod', component: Moderator, layout: null, wrapper: AuthWrapper },
+    { path: '/mod', component: ModLayout, layout: null, wrapper: AuthWrapper },
     { path: '/admin', component: Admin, layout: null, wrapper: AuthWrapper },
     // { path: '/payment', component: Payment, layout: HeaderOnly, role: 'user'},
     // { path: '/customer', component: CustomerLayout,layout : null, role: 'user'},

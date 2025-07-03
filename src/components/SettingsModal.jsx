@@ -101,7 +101,7 @@ const SettingsModal = ({ open, onOpenChange }) => {
   const fetchProfileUser = async () => {
     if (!user || !user.id) return;
     try {
-      const response = await api.get(`/Account/${user.id}`);
+      const response = await api.get(`/users/${user.id}`);
       if (response.data) {
         setProfileData({
           avatar: response.data.avatarUrl || null,
@@ -126,7 +126,7 @@ const SettingsModal = ({ open, onOpenChange }) => {
       // Lưu thông tin profile
       console.log("Saving profile data:", profileData);
       try {
-        const response = await api.put(`/Account/${user.id}`, {
+        const response = await api.put(`/users/${user.id}`, {
           fullName: profileData.fullName,
           email: profileData.email,
           phoneNumber: profileData.phoneNumber,
@@ -177,7 +177,7 @@ const SettingsModal = ({ open, onOpenChange }) => {
         setProfileData(prev => ({ ...prev, avatar: imageUrl }));
         
         // TODO: Có thể gọi API để lưu URL vào database
-        // await api.put(`/Account/${user.id}`, { avatarUrl: imageUrl });
+        // await api.put(`/users/${user.id}`, { avatarUrl: imageUrl });
         
       } catch (error) {
         console.error('Error uploading to imgBB:', error);

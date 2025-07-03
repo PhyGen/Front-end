@@ -66,7 +66,7 @@ const SignIn = () => {
       };
       
       console.log('Data being sent to server:', loginData);
-      const response = await api.post('Login', loginData);
+      const response = await api.post('/login', loginData);
       console.log('response', response);
       localStorage.setItem('token', response.data.token);
       

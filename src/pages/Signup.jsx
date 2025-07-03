@@ -83,7 +83,7 @@ const Signup = () => {
       };
       
       console.log('Data being sent to server:', signupData);
-      const response = await api.post('signup', signupData);
+      const response = await api.post('/signup', signupData);
       if(response.status === 200){
         toast.success(response.data.message, {
           position: "top-center",
