@@ -6,6 +6,7 @@ const sidebarItems = [
   { key: 'chapter', label: 'Chapter' },
   { key: 'lesson', label: 'Lesson' },
   { key: 'question', label: 'Question' },
+  { key: 'setting', label: 'Setting' },
 ];
 
 const ModSidebar = ({ selected, onSelect }) => {

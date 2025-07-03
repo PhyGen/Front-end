@@ -7,6 +7,17 @@ import api from '../../config/axios';
 import AddIcon from '@/assets/icons/add-symbol-svgrepo-com.svg';
 import loadingGif from '@/assets/icons/loading.gif';
 
+function formatDate(dateString) {
+  if (!dateString) return '-';
+  const d = new Date(dateString);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  const hh = String(d.getHours()).padStart(2, '0');
+  const min = String(d.getMinutes()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd} ${hh}:${min}`;
+}
+
 const ModSemester = () => {
   const [semesters, setSemesters] = useState([]);
   const [grades, setGrades] = useState([]);
@@ -18,8 +29,10 @@ const ModSemester = () => {
   const [editRow, setEditRow] = useState({ id: '', name: '', gradeId: '' });
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
+  const [filterName, setFilterName] = useState('');
+  const [filterGradeId, setFilterGradeId] = useState('');
 
-  useEffect(() => {
+  const fetchData = () => {
     setLoading(true);
     Promise.all([
       api.get('/semesters'),
@@ -31,6 +44,10 @@ const ModSemester = () => {
       })
       .catch(console.error)
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchData();
   }, []);
 
   const handleAdd = () => {
@@ -47,9 +64,11 @@ const ModSemester = () => {
 
   const handleCreate = () => {
     if (!newRow.name.trim() || !newRow.gradeId) return;
-    setSemesters([...semesters, { ...newRow, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }]);
     setAdding(false);
     setNewRow({ id: '', name: '', gradeId: '' });
+    api.post('/semesters', { name: newRow.name, gradeId: newRow.gradeId })
+      .then(fetchData)
+      .catch(console.error);
   };
 
   const handleEdit = (id) => {
@@ -65,9 +84,9 @@ const ModSemester = () => {
     setSaving(true);
     try {
       await api.put(`/semesters/${editRow.id}`, { id: editRow.id, name: editRow.name, gradeId: editRow.gradeId });
-      setSemesters(semesters.map(s => s.id === editRow.id ? { ...s, name: editRow.name, gradeId: editRow.gradeId } : s));
       setEditId(null);
       setEditRow({ id: '', name: '', gradeId: '' });
+      fetchData();
     } catch (e) {
       alert('Lưu thất bại!');
     } finally {
@@ -80,7 +99,7 @@ const ModSemester = () => {
     setDeletingId(id);
     try {
       await api.delete(`/semesters/${id}`);
-      setSemesters(semesters.filter(s => s.id !== id));
+      fetchData();
     } catch (e) {
       alert('Xóa thất bại!');
     } finally {
@@ -125,18 +144,46 @@ const ModSemester = () => {
                 </tr>
               </thead>
               <tbody>
-                {semesters.map(s => (
-                  <tr key={s.id} className="even:bg-slate-50">
-                    <td className="px-4 py-2 border">{s.id}</td>
-                    <td className="px-4 py-2 border">{s.name}</td>
-                    <td className="px-4 py-2 border">{grades.find(g => g.id === s.gradeId)?.name || s.gradeId}</td>
-                    <td className="px-4 py-2 border">{s.createdAt}</td>
-                    <td className="px-4 py-2 border">{s.updatedAt}</td>
-                    <td className="px-4 py-2 border flex gap-2">
-                      <Button size="sm" className="bg-blue-500 hover:bg-blue-600 text-white" onClick={() => handleEdit(s.id)}>Edit</Button>
-                      <Button size="sm" className="bg-red-500 hover:bg-red-600 text-white" onClick={() => handleDelete(s.id)}>Delete</Button>
-                    </td>
-                  </tr>
+                {semesters.filter(s =>
+                  s.name.toLowerCase().includes(filterName.toLowerCase()) &&
+                  (filterGradeId === "" || s.gradeId?.toString() === filterGradeId)
+                ).map(s => (
+                  editId === s.id ? (
+                    <tr key={s.id} className="bg-yellow-50">
+                      <td className="px-4 py-2 border font-semibold">{editRow.id}</td>
+                      <td className="px-4 py-2 border">
+                        <Input value={editRow.name} onChange={e => setEditRow(r => ({ ...r, name: e.target.value }))} placeholder="Nhập tên học kỳ" />
+                      </td>
+                      <td className="px-4 py-2 border">
+                        <Select value={editRow.gradeId} onValueChange={v => setEditRow(r => ({ ...r, gradeId: v }))}>
+                          <SelectTrigger className="w-32"><SelectValue placeholder="Chọn lớp" /></SelectTrigger>
+                          <SelectContent>
+                            {grades.map(g => (
+                              <SelectItem key={g.id} value={g.id.toString()}>{g.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </td>
+                      <td className="px-4 py-2 border">{formatDate(s.createdAt)}</td>
+                      <td className="px-4 py-2 border">{formatDate(s.updatedAt)}</td>
+                      <td className="px-4 py-2 border flex gap-2">
+                        <Button size="sm" className="bg-blue-500 hover:bg-blue-600 text-white" onClick={handleEditSave} disabled={!editRow.name.trim() || !editRow.gradeId}>Save</Button>
+                        <Button size="sm" className="bg-gray-400 hover:bg-gray-500 text-white" onClick={() => setEditId(null)}>Cancel</Button>
+                      </td>
+                    </tr>
+                  ) : (
+                    <tr key={s.id} className="even:bg-slate-50">
+                      <td className="px-4 py-2 border">{s.id}</td>
+                      <td className="px-4 py-2 border">{s.name}</td>
+                      <td className="px-4 py-2 border">{grades.find(g => g.id === s.gradeId)?.name || s.gradeId}</td>
+                      <td className="px-4 py-2 border">{formatDate(s.createdAt)}</td>
+                      <td className="px-4 py-2 border">{formatDate(s.updatedAt)}</td>
+                      <td className="px-4 py-2 border flex gap-2">
+                        <Button size="sm" className="bg-blue-500 hover:bg-blue-600 text-white" onClick={() => handleEdit(s.id)}>Edit</Button>
+                        <Button size="sm" className="bg-red-500 hover:bg-red-600 text-white" onClick={() => handleDelete(s.id)}>Delete</Button>
+                      </td>
+                    </tr>
+                  )
                 ))}
                 {adding && (
                   <tr className="bg-yellow-50">
@@ -148,7 +195,9 @@ const ModSemester = () => {
                       <Select value={newRow.gradeId} onValueChange={v => setNewRow(r => ({ ...r, gradeId: v }))}>
                         <SelectTrigger className="w-32"><SelectValue placeholder="Chọn lớp" /></SelectTrigger>
                         <SelectContent>
-                          {grades.map(g => <SelectItem key={g.id} value={g.id.toString()}>{g.name}</SelectItem>)}
+                          {grades.map(g => (
+                            <SelectItem key={g.id} value={g.id.toString()}>{g.name}</SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </td>
@@ -157,28 +206,6 @@ const ModSemester = () => {
                     <td className="px-4 py-2 border flex gap-2">
                       <Button size="sm" className="bg-blue-500 hover:bg-blue-600 text-white" onClick={handleCreate} disabled={!newRow.name.trim() || !newRow.gradeId}>Create</Button>
                       <Button size="sm" className="bg-gray-400 hover:bg-gray-500 text-white" onClick={handleCancel}>Cancel</Button>
-                    </td>
-                  </tr>
-                )}
-                {editId && (
-                  <tr className="bg-yellow-50">
-                    <td className="px-4 py-2 border font-semibold">{editRow.id}</td>
-                    <td className="px-4 py-2 border">
-                      <Input value={editRow.name} onChange={e => setEditRow(r => ({ ...r, name: e.target.value }))} placeholder="Nhập tên học kỳ" />
-                    </td>
-                    <td className="px-4 py-2 border">
-                      <Select value={editRow.gradeId} onValueChange={v => setEditRow(r => ({ ...r, gradeId: v }))}>
-                        <SelectTrigger className="w-32"><SelectValue placeholder="Chọn lớp" /></SelectTrigger>
-                        <SelectContent>
-                          {grades.map(g => <SelectItem key={g.id} value={g.id.toString()}>{g.name}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </td>
-                    <td className="px-4 py-2 border text-slate-400">-</td>
-                    <td className="px-4 py-2 border text-slate-400">-</td>
-                    <td className="px-4 py-2 border flex gap-2">
-                      <Button size="sm" className="bg-blue-500 hover:bg-blue-600 text-white" onClick={handleEditSave} disabled={!editRow.name.trim() || !editRow.gradeId}>Save</Button>
-                      <Button size="sm" className="bg-gray-400 hover:bg-gray-500 text-white" onClick={() => setEditId(null)}>Cancel</Button>
                     </td>
                   </tr>
                 )}
