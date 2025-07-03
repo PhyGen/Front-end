@@ -6,6 +6,17 @@ import api from '../../config/axios';
 import AddIcon from '@/assets/icons/add-symbol-svgrepo-com.svg';
 import loadingGif from '@/assets/icons/loading.gif';
 
+function formatDate(dateString) {
+  if (!dateString) return '-';
+  const d = new Date(dateString);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  const hh = String(d.getHours()).padStart(2, '0');
+  const min = String(d.getMinutes()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd} ${hh}:${min}`;
+}
+
 const ModGrade = () => {
   const [grades, setGrades] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -15,6 +26,7 @@ const ModGrade = () => {
   const [editRow, setEditRow] = useState({ id: '', name: '' });
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
+  const [filterName, setFilterName] = useState("");
 
   useEffect(() => {
     fetchGrades();
@@ -42,9 +54,11 @@ const ModGrade = () => {
 
   const handleCreate = () => {
     if (!newRow.name.trim()) return;
-    setGrades([...grades, { ...newRow, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }]);
     setAdding(false);
     setNewRow({ id: '', name: '' });
+    api.post('/grades', { name: newRow.name })
+      .then(fetchGrades)
+      .catch(console.error);
   };
 
   // --- EDIT ---
@@ -61,9 +75,9 @@ const ModGrade = () => {
     setSaving(true);
     try {
       await api.put(`/grades/${editRow.id}`, { id: editRow.id, name: editRow.name });
-      setGrades(grades.map(g => g.id === editRow.id ? { ...g, name: editRow.name } : g));
       setEditId(null);
       setEditRow({ id: '', name: '' });
+      fetchGrades();
     } catch (e) {
       alert('Lưu thất bại!');
     } finally {
@@ -77,7 +91,7 @@ const ModGrade = () => {
     setDeletingId(id);
     try {
       await api.delete(`/grades/${id}`);
-      setGrades(grades.filter(g => g.id !== id));
+      fetchGrades();
     } catch (e) {
       alert('Xóa thất bại!');
     } finally {
@@ -91,7 +105,13 @@ const ModGrade = () => {
         <CardTitle>Grade Management</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="mb-4 flex gap-2">
+        <div className="mb-4 flex gap-2 items-center">
+          <Input
+            value={filterName}
+            onChange={e => setFilterName(e.target.value)}
+            placeholder="Tìm kiếm tên lớp"
+            className="w-64"
+          />
           <Button onClick={handleAdd} className="flex items-center gap-1 bg-black hover:bg-neutral-800 text-white">
             <img src={AddIcon} alt="add" className="w-4 h-4" />
             Thêm
@@ -114,15 +134,15 @@ const ModGrade = () => {
                 </tr>
               </thead>
               <tbody>
-                {grades.map(g => (
+                {grades.filter(g => g.name.toLowerCase().includes(filterName.toLowerCase())).map(g => (
                   editId === g.id ? (
                     <tr key={g.id} className="bg-yellow-50">
-                      <td className="px-4 py-2 border font-semibold">{g.id}</td>
+                      <td className="px-4 py-2 border font-semibold">{editRow.id}</td>
                       <td className="px-4 py-2 border">
                         <Input value={editRow.name} onChange={e => setEditRow(r => ({ ...r, name: e.target.value }))} />
                       </td>
-                      <td className="px-4 py-2 border">{g.createdAt}</td>
-                      <td className="px-4 py-2 border">{g.updatedAt}</td>
+                      <td className="px-4 py-2 border">{formatDate(g.createdAt)}</td>
+                      <td className="px-4 py-2 border">{formatDate(g.updatedAt)}</td>
                       <td className="px-4 py-2 border flex gap-2">
                         <Button size="sm" className="bg-blue-500 hover:bg-blue-600 text-white" onClick={handleEditSave} disabled={saving || !editRow.name.trim()}>Save</Button>
                         <Button size="sm" className="bg-gray-400 hover:bg-gray-500 text-white" onClick={handleEditCancel} disabled={saving}>Cancel</Button>
@@ -132,8 +152,8 @@ const ModGrade = () => {
                     <tr key={g.id} className="even:bg-slate-50">
                       <td className="px-4 py-2 border">{g.id}</td>
                       <td className="px-4 py-2 border">{g.name}</td>
-                      <td className="px-4 py-2 border">{g.createdAt}</td>
-                      <td className="px-4 py-2 border">{g.updatedAt}</td>
+                      <td className="px-4 py-2 border">{formatDate(g.createdAt)}</td>
+                      <td className="px-4 py-2 border">{formatDate(g.updatedAt)}</td>
                       <td className="px-4 py-2 border flex gap-2">
                         <Button size="sm" className="bg-blue-500 hover:bg-blue-600 text-white" onClick={() => handleEdit(g)}>Edit</Button>
                         <Button size="sm" className="bg-red-500 hover:bg-red-600 text-white" onClick={() => handleDelete(g.id)} disabled={deletingId === g.id}>{deletingId === g.id ? '...' : 'Delete'}</Button>
