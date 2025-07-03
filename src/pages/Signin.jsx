@@ -82,7 +82,10 @@ const SignIn = () => {
           autoClose: 2000
         });
         setTimeout(() => {
-          navigate('/');
+          if (decodedToken.roleId === "1") navigate('/');
+          else if (decodedToken.roleId === "2") navigate('/admin');
+          else if (decodedToken.roleId === "3") navigate('/mod');
+          else navigate('/');
         }, 2000);
       }
     } catch (error) {
