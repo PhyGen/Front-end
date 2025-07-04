@@ -109,14 +109,43 @@ const Signup = () => {
   const signUpWithGoogle = async () => {
     try {
       const result = await signInWithPopup(auth, googleProvider);
-      console.log('Đăng ký thành công:', result.user);
-      navigate('/');
+      const idToken = await result.user.getIdToken();
+      console.log('idToken', idToken);
+
+      const response = await api.post('/login/google-login', {
+        credential: idToken
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'text/plain'
+        }
+      });
+
+      localStorage.setItem('token', response.data);
+      // Nếu bạn có context Auth, hãy decode và setUser như ở Signin
+      // const decodedToken = jwtDecode(response.data);
+      // setUser(decodedToken);
+
+      toast.success('Đăng ký/Đăng nhập Google thành công!', {
+        position: "top-center",
+        theme: "light",
+        autoClose: 2000
+      });
+      setTimeout(() => {
+        // Nếu có phân quyền, decode token và điều hướng như Signin
+        // if (decodedToken.roleId === "1") navigate('/');
+        // else if (decodedToken.roleId === "2") navigate('/admin');
+        // else if (decodedToken.roleId === "3") navigate('/mod');
+        // else 
+        navigate('/');
+      }, 2000);
+
     } catch (error) {
       console.error('Chi tiết lỗi:', {
         code: error.code,
         message: error.message
       });
-      
+
       let errorMessage = t('error_signup_failed');
       switch (error.code) {
         case 'auth/popup-closed-by-user':
