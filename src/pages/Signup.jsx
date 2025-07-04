@@ -1,7 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { signInWithPopup } from 'firebase/auth';
-import { auth, googleProvider } from '../config/firebase';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,9 +13,10 @@ import { ToastContainer, toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
+import axios from 'axios';
+import { jwtDecode } from 'jwt-decode';
 
 const Signup = () => {
-  const { signUpWithEmail } = useAuth();
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -28,6 +27,7 @@ const Signup = () => {
     name: '',
     confirmPassword: ''
   });
+  const { user, setUser } = useAuth();
   const navigate = useNavigate();
   const { t } = useTranslation();
 
@@ -106,70 +106,114 @@ const Signup = () => {
     }
   };
 
-  const signUpWithGoogle = async () => {
+  const handleGoogleCallback = async (response) => {
     try {
-      const result = await signInWithPopup(auth, googleProvider);
-      const idToken = await result.user.getIdToken();
-      console.log('idToken', idToken);
-
-      const response = await api.post('/login/google-login', {
-        credential: idToken
-      }, {
+      setIsLoading(true);
+      setError('');
+      
+      console.log('Google login response:', response);
+      
+      // Gửi credential lên backend (backend mong đợi field 'credential')
+      const requestData = {
+        credential: response.credential
+      };
+      console.log('Request data being sent:', requestData);
+      console.log('Request URL:', '/login/google-login');
+      console.log('Full URL:', 'https://phygen.ticketresell-swp.click/api/login/google-login');
+// Gọi API với endpoint chính xác (không cần Authorization header)
+      const loginResponse = await axios.post('https://phygen.ticketresell-swp.click/api/login/google-login', requestData, {
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'text/plain'
-        }
+          'Accept': 'application/json'
+        },
+        timeout: 30000
       });
 
-      localStorage.setItem('token', response.data);
-      // Nếu bạn có context Auth, hãy decode và setUser như ở Signin
-      // const decodedToken = jwtDecode(response.data);
-      // setUser(decodedToken);
-
-      toast.success('Đăng ký/Đăng nhập Google thành công!', {
-        position: "top-center",
-        theme: "light",
-        autoClose: 2000
-      });
-      setTimeout(() => {
-        // Nếu có phân quyền, decode token và điều hướng như Signin
-        // if (decodedToken.roleId === "1") navigate('/');
-        // else if (decodedToken.roleId === "2") navigate('/admin');
-        // else if (decodedToken.roleId === "3") navigate('/mod');
-        // else 
-        navigate('/');
-      }, 2000);
-
-    } catch (error) {
-      console.error('Chi tiết lỗi:', {
-        code: error.code,
-        message: error.message
-      });
-
-      let errorMessage = t('error_signup_failed');
-      switch (error.code) {
-        case 'auth/popup-closed-by-user':
-          errorMessage = t('error_popup_closed');
-          break;
-        case 'auth/popup-blocked':
-          errorMessage = t('error_popup_blocked');
-          break;
-        case 'auth/cancelled-popup-request':
-          errorMessage = t('error_popup_cancelled');
-          break;
-        case 'auth/network-request-failed':
-          errorMessage = t('error_network_failed');
-          break;
-        default:
-          errorMessage = `${t('error_signup_default')}: ${error.message}`;
+      console.log('Backend response:', loginResponse);
+      
+      if (loginResponse.status === 200) {
+        localStorage.setItem('token', loginResponse.data.token);
+        
+        // Decode token và set user
+        const decodedToken = jwtDecode(loginResponse.data.token);
+        console.log('Decoded token after Google login:', decodedToken);
+        setUser(decodedToken);
+        
+        toast.success(loginResponse.data.message || t('login_successful'), {
+          position: "top-center",
+          theme: "light",
+          autoClose: 2000
+        });
+        
+        setTimeout(() => {
+          if (decodedToken.roleId === "1") navigate('/');
+          else if (decodedToken.roleId === "2") navigate('/admin');
+          else if (decodedToken.roleId === "3") navigate('/mod');
+          else navigate('/');
+        }, 2000);
       }
+    } catch (error) {
+      console.error('Google login error:', error);
+      console.error('Error response:', error.response);
+      console.error('Error status:', error.response?.status);
+      console.error('Error data:', error.response?.data);
+      
+      let errorMessage = t('error_google_login_failed');
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.status === 400) {
+        errorMessage = 'Invalid request. Please check your Google login configuration.';
+      } else if (error.response?.status === 404) {
+        errorMessage = 'Google login endpoint not found. Please contact administrator.';
+      }
+      
       toast.error(errorMessage, {
         position: "top-center",
         theme: "light",
         autoClose: 2000
       });
+    } finally {
+      setIsLoading(false);
     }
   };
+
+    // Initialize Google Identity Services
+    useEffect(() => {
+      const initializeGoogleSignIn = () => {
+        if (window.google && window.google.accounts) {
+          window.google.accounts.id.initialize({
+            client_id: "310764216947-6bq7kia8mnhhrr9mdckbkt5jaq0f2i2o.apps.googleusercontent.com", // Client ID của backend
+            callback: handleGoogleCallback,
+            auto_select: false,
+            cancel_on_tap_outside: true,
+          });
+  
+          window.google.accounts.id.renderButton(
+            document.getElementById("googleSignInDiv"),
+            { 
+              theme: "outline", 
+              size: "large", 
+              width: "100%",
+              text: "continue_with",
+              shape: "rectangular"
+            }
+          );
+        }
+      };
+  
+      // Check if Google script is loaded
+      if (window.google) {
+        initializeGoogleSignIn();
+      } else {
+        // Wait for Google script to load
+        const checkGoogle = setInterval(() => {
+          if (window.google) {
+            clearInterval(checkGoogle);
+            initializeGoogleSignIn();
+          }
+        }, 100);
+      }
+    }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex flex-col items-center justify-center p-4">
@@ -323,14 +367,8 @@ const Signup = () => {
             </div>
           </div>
 
-          <Button
-            onClick={signUpWithGoogle}
-            variant="outline"
-            className="w-full border-slate-200 hover:bg-slate-50 text-slate-700"
-          >
-            <img src={googleIcon} alt="Google" className="w-5 h-5 mr-2" />
-            {t('continue_with_google')}
-          </Button>
+          {/* Google Sign-Up Button */}
+          <div id="googleSignInDiv" className="w-full"></div>
 
           <div className="text-center text-sm text-slate-600">
             {t('already_have_account')}{' '}
