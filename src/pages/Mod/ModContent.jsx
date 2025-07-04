@@ -8,6 +8,7 @@ import { useAuth } from '@/context/AuthContext';
 import api from '../../config/axios';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import ModSetting from './ModSetting';
 
 const ModContent = ({ selected }) => {
   const { user, setUser } = useAuth();
@@ -38,29 +39,7 @@ const ModContent = ({ selected }) => {
   else if (selected === 'chapter') content = <ModChapter />;
   else if (selected === 'lesson') content = <ModLesson />;
   // else if (selected === 'question') content = <ModQuestion />;
-  else if (selected === 'setting') content = (
-    <div className="max-w-md mx-auto mt-10 p-6 bg-white rounded-lg shadow">
-      <h2 className="text-2xl font-bold mb-4 text-blue-700">Cài đặt tài khoản</h2>
-      {loading ? (
-        <div>Đang tải thông tin...</div>
-      ) : userInfo ? (
-        <div className="mb-6">
-          <div className="mb-2"><b>ID:</b> {userInfo.id}</div>
-          <div className="mb-2"><b>Email:</b> {userInfo.email}</div>
-          <div className="mb-2"><b>Họ tên:</b> {userInfo.fullName || userInfo.name || '-'}</div>
-          <div className="mb-2"><b>Vai trò:</b> {userInfo.roleName || userInfo.role || '-'}</div>
-        </div>
-      ) : (
-        <div>Không lấy được thông tin người dùng.</div>
-      )}
-      <button
-        onClick={handleLogout}
-        className="w-full py-2 px-4 bg-red-500 hover:bg-red-600 text-white rounded-lg font-semibold mt-4"
-      >
-        Đăng xuất
-      </button>
-    </div>
-  );
+  else if (selected === 'setting') content = <ModSetting />;
   else content = null;
 
   return (

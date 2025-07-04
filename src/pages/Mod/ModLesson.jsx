@@ -7,6 +7,8 @@ import { Pagination, PaginationContent, PaginationItem, PaginationLink, Paginati
 import api from '../../config/axios';
 import AddIcon from '@/assets/icons/add-symbol-svgrepo-com.svg';
 import loadingGif from '@/assets/icons/loading.gif';
+import { useNavigate, useLocation } from 'react-router-dom';
+import StatusNotFound from '@/assets/icons/status-notfound-svgrepo-com.svg';
 
 function formatDate(dateString) {
   if (!dateString) return '-';
@@ -34,27 +36,50 @@ const ModLesson = () => {
   const [pageSize, setPageSize] = useState(5);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
+  const [search, setSearch] = useState("");
+  const [pendingSearch, setPendingSearch] = useState("");
+  const [sort, setSort] = useState("createdAt:desc");
+  const [isSort, setIsSort] = useState(1);
+  const [chapterId, setChapterId] = useState("");
+  const [pendingChapterId, setPendingChapterId] = useState('all');
+  const [pendingSort, setPendingSort] = useState('createdAt:desc');
+  const location = useLocation();
+  const navigate = useNavigate();
 
   const fetchData = () => {
+    console.log("Search",search);
+    console.log("page",page);
+    console.log("pageSize",pageSize);
+    console.log("isSort",isSort);
+    console.log("sort",sort);
     setLoading(true);
     Promise.all([
-      api.get(`/lessons?pageNumber=${page}&pageSize=${pageSize}`),
+      api.get(`/lessons?pageNumber=${page}&pageSize=${pageSize}` +
+        (search ? `&search=${encodeURIComponent(search)}` : "") +
+        (isSort ? `&isSort=1&sort=${sort}` : "") +
+        (chapterId ? `&chapterId=${chapterId}` : "")),
       api.get('/chapters')
     ])
       .then(([lessonRes, chapterRes]) => {
+        console.log(lessonRes.data.items);
         setLessons(lessonRes.data.items);
         setTotalPages(lessonRes.data.totalPages);
         setTotalItems(lessonRes.data.totalItems);
         setChapters(chapterRes.data);
       })
-      .catch(console.error)
+      .catch(error => {
+        setLessons([]);
+      })
       .finally(() => setLoading(false));
   };
 
   useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const pageParam = parseInt(params.get('page'), 10);
+    if (pageParam && pageParam > 0) setPage(pageParam);
     fetchData();
   // eslint-disable-next-line
-  }, [page, pageSize]);
+  }, [page, pageSize, search, sort, isSort, chapterId]);
 
   const handleAdd = () => {
     if (adding) return;
@@ -113,20 +138,61 @@ const ModLesson = () => {
     }
   };
 
+  const handlePageChange = (newPage) => {
+    setPage(newPage);
+    const params = new URLSearchParams(location.search);
+    params.set('page', newPage);
+    navigate({ search: params.toString() });
+  };
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>Lesson Management</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="mb-4 flex gap-2 items-center">
-          <Input value={newLesson.name} onChange={e => setNewLesson(s => ({ ...s, name: e.target.value }))} placeholder="Tên bài mới" />
-          <Select value={newLesson.chapterId} onValueChange={v => setNewLesson(s => ({ ...s, chapterId: v }))}>
-            <SelectTrigger className="w-32"><SelectValue placeholder="Chọn chương" /></SelectTrigger>
+        <div className="mb-4 flex gap-2 items-center flex-wrap">
+          <Input
+            value={pendingSearch}
+            onChange={e => setPendingSearch(e.target.value)}
+            placeholder="Tìm kiếm tên bài..."
+            className="w-64"
+          />
+          <Select value={pendingChapterId} onValueChange={v => setPendingChapterId(v)}>
+            <SelectTrigger className="w-40"><SelectValue placeholder="Lọc theo chương" /></SelectTrigger>
             <SelectContent>
+              <SelectItem value="all">Tất cả chương</SelectItem>
               {chapters.map(c => <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>)}
             </SelectContent>
           </Select>
+          <Select value={pendingSort} onValueChange={v => setPendingSort(v)}>
+            <SelectTrigger className="w-48"><SelectValue placeholder="Sắp xếp" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="createdAt:desc">Mới nhất</SelectItem>
+              <SelectItem value="createdAt:asc">Cũ nhất</SelectItem>
+              <SelectItem value="name:asc">Tên A-Z</SelectItem>
+              <SelectItem value="name:desc">Tên Z-A</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button
+            onClick={() => {
+              setSearch(pendingSearch);
+              setChapterId(pendingChapterId === 'all' ? '' : pendingChapterId);
+              setSort(pendingSort);
+              setIsSort(1);
+              setPage(1);
+            }}
+            className="bg-blue-500 hover:bg-blue-600 text-white"
+          >
+            Tìm kiếm
+          </Button>
+          <Button onClick={() => {
+            setSearch(""); setPendingSearch("");
+            setSort("createdAt:desc"); setPendingSort("createdAt:desc");
+            setIsSort(1);
+            setChapterId(""); setPendingChapterId("all");
+            setPage(1);
+          }} variant="outline">Đặt lại</Button>
           <Button onClick={handleAdd} className="flex items-center gap-1 bg-black hover:bg-neutral-800 text-white">
             <img src={AddIcon} alt="add" className="w-4 h-4" />
             Thêm
@@ -147,6 +213,11 @@ const ModLesson = () => {
           {loading ? (
             <div className="flex justify-center items-center h-24">
               <img src={loadingGif} alt="loading" className="w-10 h-10" />
+            </div>
+          ) : lessons.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-8">
+              <img src={StatusNotFound} alt="not found" className="w-16 h-16 mb-2 opacity-80" />
+              <span className="text-red-600 font-semibold text-lg">Lesson not found</span>
             </div>
           ) : (
             <table className="min-w-full text-sm border">
@@ -229,17 +300,17 @@ const ModLesson = () => {
           <Pagination>
             <PaginationContent>
               <PaginationItem>
-                <PaginationPrevious onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} />
+                <PaginationPrevious onClick={() => handlePageChange(Math.max(1, page - 1))} disabled={page === 1} />
               </PaginationItem>
               {[...Array(totalPages)].map((_, i) => (
                 <PaginationItem key={i}>
-                  <PaginationLink isActive={page === i + 1} onClick={() => setPage(i + 1)}>
+                  <PaginationLink isActive={page === i + 1} onClick={() => handlePageChange(i + 1)}>
                     {i + 1}
                   </PaginationLink>
                 </PaginationItem>
               ))}
               <PaginationItem>
-                <PaginationNext onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} />
+                <PaginationNext onClick={() => handlePageChange(Math.min(totalPages, page + 1))} disabled={page === totalPages} />
               </PaginationItem>
             </PaginationContent>
           </Pagination>

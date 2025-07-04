@@ -103,8 +103,33 @@ const SignIn = () => {
   const signInWithGoogle = async () => {
     try {
       const result = await signInWithPopup(auth, googleProvider);
-      console.log('Đăng nhập thành công:', result.user);
-      navigate('/');
+      const idToken = await result.user.getIdToken();
+      console.log('idToken', idToken);
+      const response = await api.post('/login/google-login', {
+        credential: idToken
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'text/plain'
+        }
+      });
+
+      localStorage.setItem('token', response.data);
+      const decodedToken = jwtDecode(response.data);
+      setUser(decodedToken);
+
+      toast.success('Đăng nhập Google thành công!', {
+        position: "top-center",
+        theme: "light",
+        autoClose: 2000
+      });
+      setTimeout(() => {
+        if (decodedToken.roleId === "1") navigate('/');
+        else if (decodedToken.roleId === "2") navigate('/admin');
+        else if (decodedToken.roleId === "3") navigate('/mod');
+        else navigate('/');
+      }, 2000);
+
     } catch (error) {
       console.error('Chi tiết lỗi:', {
         code: error.code,
