@@ -21,7 +21,7 @@ function formatDate(dateString) {
   return `${yyyy}-${mm}-${dd} ${hh}:${min}`;
 }
 
-const ModLesson = () => {
+const AdminLesson = () => {
   const [lessons, setLessons] = useState([]);
   const [chapters, setChapters] = useState([]);
   const [newLesson, setNewLesson] = useState({ name: '', chapterId: '' });
@@ -47,11 +47,6 @@ const ModLesson = () => {
   const navigate = useNavigate();
 
   const fetchData = () => {
-    console.log("Search",search);
-    console.log("page",page);
-    console.log("pageSize",pageSize);
-    console.log("isSort",isSort);
-    console.log("sort",sort);
     setLoading(true);
     Promise.all([
       api.get(`/lessons?pageNumber=${page}&pageSize=${pageSize}` +
@@ -61,7 +56,6 @@ const ModLesson = () => {
       api.get('/chapters')
     ])
       .then(([lessonRes, chapterRes]) => {
-        console.log(lessonRes.data.items);
         setLessons(lessonRes.data.items);
         setTotalPages(lessonRes.data.totalPages);
         setTotalItems(lessonRes.data.totalItems);
@@ -78,7 +72,6 @@ const ModLesson = () => {
     const pageParam = parseInt(params.get('page'), 10);
     if (pageParam && pageParam > 0) setPage(pageParam);
     fetchData();
-  // eslint-disable-next-line
   }, [page, pageSize, search, sort, isSort, chapterId]);
 
   const handleAdd = () => {
@@ -192,7 +185,9 @@ const ModLesson = () => {
             setIsSort(1);
             setChapterId(""); setPendingChapterId("all");
             setPage(1);
-          }} variant="outline">Đặt lại</Button>
+          }} variant="outline">
+            Đặt lại
+          </Button>
           <Button onClick={handleAdd} className="flex items-center gap-1 bg-black hover:bg-neutral-800 text-white">
             <img src={AddIcon} alt="add" className="w-4 h-4" />
             Thêm
@@ -280,7 +275,9 @@ const ModLesson = () => {
                       <Select value={newRow.chapterId} onValueChange={v => setNewRow(r => ({ ...r, chapterId: v }))}>
                         <SelectTrigger className="w-32"><SelectValue placeholder="Chọn chương" /></SelectTrigger>
                         <SelectContent>
-                          {chapters.map(c => <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>)}
+                          {chapters.map(c => (
+                            <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </td>
@@ -300,17 +297,17 @@ const ModLesson = () => {
           <Pagination>
             <PaginationContent>
               <PaginationItem>
-                <PaginationPrevious onClick={() => handlePageChange(Math.max(1, page - 1))} disabled={page === 1} />
+                <PaginationPrevious onClick={() => setPage(Math.max(1, page - 1))} disabled={page === 1} />
               </PaginationItem>
               {[...Array(totalPages)].map((_, i) => (
                 <PaginationItem key={i}>
-                  <PaginationLink isActive={page === i + 1} onClick={() => handlePageChange(i + 1)}>
+                  <PaginationLink isActive={page === i + 1} onClick={() => setPage(i + 1)}>
                     {i + 1}
                   </PaginationLink>
                 </PaginationItem>
               ))}
               <PaginationItem>
-                <PaginationNext onClick={() => handlePageChange(Math.min(totalPages, page + 1))} disabled={page === totalPages} />
+                <PaginationNext onClick={() => setPage(Math.min(totalPages, page + 1))} disabled={page === totalPages} />
               </PaginationItem>
             </PaginationContent>
           </Pagination>
@@ -320,4 +317,4 @@ const ModLesson = () => {
   );
 };
 
-export default ModLesson; 
+export default AdminLesson; 

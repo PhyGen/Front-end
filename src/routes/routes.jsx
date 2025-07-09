@@ -8,6 +8,7 @@ import DataDeletion from "../pages/DataDeletion";
 import DefaultLayout from "../layouts/defaultLayout/defaultLayout";
 import ModLayout from "../pages/Mod/ModLayout";
 import Admin from "../pages/Admin/Admin";
+import CardDetail from '../components/CardDetail';
 
 const publicRoutes = [
     { path: '/landing', component: Landing, layout: null },
@@ -15,6 +16,7 @@ const publicRoutes = [
     { path: '/signin', component: Signin, layout: null},
     { path: '/privacy-policy', component: PrivacyPolicy, layout: null},
     { path: '/data-deletion', component: DataDeletion, layout: null},
+    { path: '/card-detail/:itemId', component: CardDetail, layout: null }, // Thêm route CardDetail
 ];
 
 const privateRoutes = [

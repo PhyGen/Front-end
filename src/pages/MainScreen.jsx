@@ -100,18 +100,6 @@ const MainScreen = () => {
           </Placeholder>
         );
         break;
-      case 'ai':
-        content = (
-          <Placeholder
-            label={t('ai_generate')}
-            icon={Bot}
-            description={t('ai_generate_description')}
-            color="indigo"
-          >
-            {/* Nội dung động cho AI Generate */}
-          </Placeholder>
-        );
-        break;
       case 'spam':
         content = (
           <Placeholder

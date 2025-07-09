@@ -1,17 +1,17 @@
 import React from 'react';
-import ModGrade from './ModGrade';
-import ModSemester from './ModSemester';
-import ModChapter from './ModChapter';
-import ModLesson from './ModLesson';
-// import ModQuestion from './ModQuestion';
+import AdminGrade from './AdminGrade';
+import AdminSemester from './AdminSemester';
+import AdminChapter from './AdminChapter';
+import AdminLesson from './AdminLesson';
+import AdminSetting from './AdminSetting';
+import AdminQuestion from './AdminQuestion';
+import AdminAccount from './AdminAccount';
 import { useAuth } from '@/context/AuthContext';
 import api from '../../config/axios';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import ModSetting from './ModSetting';
-import ModQuestion from './ModQuestion';
 
-const ModContent = ({ selected }) => {
+const AdminContent = ({ selected }) => {
   const { user, setUser } = useAuth();
   const [userInfo, setUserInfo] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -35,13 +35,13 @@ const ModContent = ({ selected }) => {
   };
 
   let content = null;
-  if (selected === 'grade') content = <ModGrade />;
-  else if (selected === 'semester') content = <ModSemester />;
-  else if (selected === 'chapter') content = <ModChapter />;
-  else if (selected === 'lesson') content = <ModLesson />;
-  // else if (selected === 'question') content = <ModQuestion />;
-  else if (selected === 'setting') content = <ModSetting />;
-  else if (selected === 'question') content = <ModQuestion />;
+  if (selected === 'grade') content = <AdminGrade />;
+  else if (selected === 'semester') content = <AdminSemester />;
+  else if (selected === 'chapter') content = <AdminChapter />;
+  else if (selected === 'lesson') content = <AdminLesson />;
+  else if (selected === 'setting') content = <AdminSetting />;
+  else if (selected === 'question') content = <AdminQuestion />;
+  else if (selected === 'account') content = <AdminAccount />;
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-8">
@@ -50,4 +50,4 @@ const ModContent = ({ selected }) => {
   );
 };
 
-export default ModContent; 
+export default AdminContent; 
