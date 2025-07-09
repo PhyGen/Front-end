@@ -27,28 +27,12 @@ const RadixModal = ({ open, onOpenChange, children }) => {
           }}
         />
         <Dialog.Content
-          style={{
-            position: 'fixed',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            background: 'white',
-            borderRadius: '16px',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
-            width: '800px',
-            maxWidth: '95vw',
-            maxHeight: '90vh',
-            padding: '2rem',
-            zIndex: 51,
-            overflowY: 'auto',
-            display: 'flex',
-            flexDirection: 'column',
-          }}
+          className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-[#242526] rounded-2xl shadow-2xl w-[800px] max-w-[95vw] max-h-[90vh] p-8 z-[51] overflow-y-auto flex flex-col"
         >
-          <Dialog.Title style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>
+          <Dialog.Title style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }} className="dark:text-white">
             {t('general_settings')}
           </Dialog.Title>
-          <Dialog.Description style={{ color: '#64748b', marginBottom: 24 }}>
+          <Dialog.Description style={{ color: '#64748b', marginBottom: 24 }} className="dark:text-white">
             {t('update_profile_preferences')}
           </Dialog.Description>
           {children}
@@ -74,7 +58,7 @@ const RadixModal = ({ open, onOpenChange, children }) => {
   );
 };
 
-const SettingsModal = ({ open, onOpenChange }) => {
+const SettingsModal = ({ open, onOpenChange, initialView }) => {
   const { user } = useAuth();
   const { t, i18n } = useTranslation();
   const [isEditing, setIsEditing] = useState(false);
@@ -219,7 +203,7 @@ const SettingsModal = ({ open, onOpenChange }) => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <User className="w-5 h-5 text-slate-600" />
-                    <CardTitle className="text-lg">{t('profile')}</CardTitle>
+                    <CardTitle className="text-lg dark:text-white">{t('profile')}</CardTitle>
                   </div>
                   <Button 
                     variant={isEditing ? "default" : "outline"}
@@ -243,7 +227,7 @@ const SettingsModal = ({ open, onOpenChange }) => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium text-slate-700">{t('avatar')}</Label>
+                  <Label className="text-sm font-medium text-slate-700 dark:text-white">{t('avatar')}</Label>
                   <div className="flex items-center gap-4">
                     <div className="relative">
                       <Avatar className="h-16 w-16">
@@ -282,31 +266,31 @@ const SettingsModal = ({ open, onOpenChange }) => {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium text-slate-700">{t('full_name')}</Label>
+                  <Label className="text-sm font-medium text-slate-700 dark:text-white">{t('full_name')}</Label>
                   <Input
                     value={profileData.fullName}
                     onChange={(e) => handleProfileChange('fullName', e.target.value)}
                     disabled={!isEditing}
-                    className="max-w-md"
+                    className="max-w-md dark:text-white"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium text-slate-700">{t('email')}</Label>
+                  <Label className="text-sm font-medium text-slate-700 dark:text-white">{t('email')}</Label>
                   <Input
                     type="email"
                     value={profileData.email}
                     onChange={(e) => handleProfileChange('email', e.target.value)}
                     disabled={!isEditing}
-                    className="max-w-md"
+                    className="max-w-md dark:text-white"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium text-slate-700">{t('phone_number')}</Label>
+                  <Label className="text-sm font-medium text-slate-700 dark:text-white">{t('phone_number')}</Label>
                   <Input
                     value={profileData.phoneNumber || ''}
                     onChange={(e) => handleProfileChange('phoneNumber', e.target.value)}
                     disabled={!isEditing}
-                    className="max-w-md"
+                    className="max-w-md dark:text-white"
                   />
                 </div>
               </CardContent>
@@ -318,7 +302,7 @@ const SettingsModal = ({ open, onOpenChange }) => {
             <CardHeader className="pb-3">
               <div className="flex items-center gap-3">
                 <Home className="w-5 h-5 text-slate-600" />
-                <CardTitle className="text-lg">{t('start_page')}</CardTitle>
+                <CardTitle className="text-lg dark:text-white">{t('start_page')}</CardTitle>
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -332,7 +316,7 @@ const SettingsModal = ({ open, onOpenChange }) => {
                   onChange={() => handleStartPageChange('home')}
                   className="w-4 h-4 text-blue-600"
                 />
-                <Label htmlFor="start-home" className="text-sm font-medium text-slate-700 cursor-pointer">
+                <Label htmlFor="start-home" className="text-sm font-medium text-slate-700 cursor-pointer dark:text-white">
                   {t('home')}
                 </Label>
               </div>
@@ -346,7 +330,7 @@ const SettingsModal = ({ open, onOpenChange }) => {
                   onChange={() => handleStartPageChange('myExam')}
                   className="w-4 h-4 text-blue-600"
                 />
-                <Label htmlFor="start-exam" className="text-sm font-medium text-slate-700 cursor-pointer">
+                <Label htmlFor="start-exam" className="text-sm font-medium text-slate-700 cursor-pointer dark:text-white">
                   {t('my_exam')}
                 </Label>
               </div>
@@ -356,7 +340,7 @@ const SettingsModal = ({ open, onOpenChange }) => {
             <CardHeader className="pb-3">
               <div className="flex items-center gap-3">
                 <Globe className="w-5 h-5 text-slate-600" />
-                <CardTitle className="text-lg">{t('language')}</CardTitle>
+                <CardTitle className="text-lg dark:text-white">{t('language')}</CardTitle>
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -370,7 +354,7 @@ const SettingsModal = ({ open, onOpenChange }) => {
                   onChange={() => handleLanguageChange('en')}
                   className="w-4 h-4 text-blue-600"
                 />
-                <Label htmlFor="lang-english" className="text-sm font-medium text-slate-700 cursor-pointer">
+                <Label htmlFor="lang-english" className="text-sm font-medium text-slate-700 cursor-pointer dark:text-white">
                   {t('english')}
                 </Label>
               </div>
@@ -384,7 +368,7 @@ const SettingsModal = ({ open, onOpenChange }) => {
                   onChange={() => handleLanguageChange('vi')}
                   className="w-4 h-4 text-blue-600"
                 />
-                <Label htmlFor="lang-vietnamese" className="text-sm font-medium text-slate-700 cursor-pointer">
+                <Label htmlFor="lang-vietnamese" className="text-sm font-medium text-slate-700 cursor-pointer dark:text-white">
                   {t('vietnamese')}
                 </Label>
               </div>
@@ -394,7 +378,7 @@ const SettingsModal = ({ open, onOpenChange }) => {
             <CardHeader className="pb-3">
               <div className="flex items-center gap-3">
                 <FileText className="w-5 h-5 text-slate-600" />
-                <CardTitle className="text-lg">{t('open_pdf_file')}</CardTitle>
+                <CardTitle className="text-lg dark:text-white">{t('open_pdf_file')}</CardTitle>
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -408,7 +392,7 @@ const SettingsModal = ({ open, onOpenChange }) => {
                   onChange={(e) => setPdfOpenMode(e.target.value)}
                   className="w-4 h-4 text-blue-600"
                 />
-                <Label htmlFor="pdf-new-card" className="text-sm font-medium text-slate-700 cursor-pointer">
+                <Label htmlFor="pdf-new-card" className="text-sm font-medium text-slate-700 cursor-pointer dark:text-white">
                   {t('new_card')}
                 </Label>
               </div>
@@ -422,7 +406,7 @@ const SettingsModal = ({ open, onOpenChange }) => {
                   onChange={(e) => setPdfOpenMode(e.target.value)}
                   className="w-4 h-4 text-blue-600"
                 />
-                <Label htmlFor="pdf-preview" className="text-sm font-medium text-slate-700 cursor-pointer">
+                <Label htmlFor="pdf-preview" className="text-sm font-medium text-slate-700 cursor-pointer dark:text-white">
                   {t('preview')}
                 </Label>
               </div>
@@ -434,4 +418,4 @@ const SettingsModal = ({ open, onOpenChange }) => {
   );
 };
 
-export default SettingsModal; 
+export default SettingsModal;

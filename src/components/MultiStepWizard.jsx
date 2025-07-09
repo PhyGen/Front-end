@@ -259,7 +259,7 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
               key={q.id}
               className={clsx(
                 'w-48 h-64 flex flex-col items-center justify-center cursor-pointer border-2 transition',
-                selectedQuestions.includes(q.id) ? 'border-blue-500 shadow-lg bg-blue-50' : 'border-slate-200 hover:border-blue-300'
+                selectedQuestions.includes(q.id) ? 'border-blue-500 shadow-lg bg-blue-50 dark:bg-[#23272f]' : 'border-slate-200 hover:border-blue-300'
               )}
               onClick={() => handleSelectQuestion(q.id)}
             >
@@ -282,18 +282,16 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
         <div className="text-2xl font-semibold text-center mb-6">Select the chapter for your {type}</div>
         <div className="grid grid-cols-2 gap-4 max-h-[400px] overflow-y-auto mb-8">
           {chapters.map((c) => (
-            <Card
+            <div
               key={c.id}
               className={clsx(
-                'cursor-pointer border-2 transition p-4',
-                chapter === c.id ? 'border-blue-500 shadow-lg bg-blue-50' : 'border-slate-200 hover:border-blue-300'
+                'p-4 border-2 rounded-lg cursor-pointer transition',
+                chapter === c.id ? 'bg-blue-600 text-white' : 'border-slate-200 hover:border-blue-300'
               )}
               onClick={() => setChapter(c.id)}
             >
-              <CardContent className="p-2">
-                <span className="text-sm font-medium">{c.title}</span>
-              </CardContent>
-            </Card>
+              {c.title}
+            </div>
           ))}
         </div>
         <div className="flex justify-between">
@@ -308,18 +306,16 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
         <div className="text-2xl font-semibold text-center mb-6">Select the lesson for your {type}</div>
         <div className="grid grid-cols-2 gap-4 max-h-[400px] overflow-y-auto mb-8">
           {lessons.map((l) => (
-            <Card
+            <div
               key={l.id}
               className={clsx(
-                'cursor-pointer border-2 transition p-4',
-                lesson === l.id ? 'border-blue-500 shadow-lg bg-blue-50' : 'border-slate-200 hover:border-blue-300'
+                'p-4 border-2 rounded-lg cursor-pointer transition',
+                lesson === l.id ? 'bg-blue-600 text-white' : 'border-slate-200 hover:border-blue-300'
               )}
               onClick={() => setLesson(l.id)}
             >
-              <CardContent className="p-2">
-                <span className="text-sm font-medium">{l.title}</span>
-              </CardContent>
-            </Card>
+              {l.title}
+            </div>
           ))}
         </div>
         <div className="flex justify-between">

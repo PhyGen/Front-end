@@ -60,8 +60,8 @@ const Recently = () => {
 const TimeSection = ({ label, children }) => (
   <div className="mb-10">
     <div className="flex items-center mb-4">
-      <span className="text-base font-semibold text-gray-700 mr-4">{label}</span>
-      <div className="flex-1 border-t border-gray-300"></div>
+      <span className="text-base font-semibold text-gray-700 dark:text-gray-300 mr-4">{label}</span>
+      <div className="flex-1 border-t border-gray-300 dark:border-gray-600"></div>
     </div>
     {children}
   </div>

@@ -9,12 +9,12 @@ const Footer = () => {
   const { t } = useTranslation();
 
   return (
-    <footer className="bg-slate-50 text-slate-700 py-8 mt-auto border-t">
+    <footer className="bg-slate-50 text-slate-700 py-8 mt-auto border-t dark:bg-[#18191a] dark:text-slate-200">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* About PhyGen */}
           <div className="space-y-4">
-            <h3 className="text-xl font-bold text-slate-900">PhyGen</h3>
+            <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">PhyGen</h3>
             <p className="text-sm leading-relaxed">
               {t('footer_description')}
             </p>
@@ -22,7 +22,7 @@ const Footer = () => {
           
           {/* Quick Links */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-slate-800">{t('quick_links')}</h3>
+            <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100">{t('quick_links')}</h3>
             <ul className="space-y-2 text-sm">
               <li><a href="#" className="hover:text-blue-600 transition-colors">{t('about_us')}</a></li>
               <li><a href="#" className="hover:text-blue-600 transition-colors">{t('feature')}</a></li>
@@ -33,7 +33,7 @@ const Footer = () => {
 
           {/* Legal */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-slate-800">{t('legal')}</h3>
+            <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100">{t('legal')}</h3>
             <ul className="space-y-2 text-sm">
               <li><a href="/privacy-policy" className="hover:text-blue-600 transition-colors">{t('privacy_policy')}</a></li>
               <li><a href="/terms" className="hover:text-blue-600 transition-colors">{t('terms_of_service')}</a></li>
@@ -43,18 +43,18 @@ const Footer = () => {
           
           {/* Social Media */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-slate-800">{t('follow_us')}</h3>
+            <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100">{t('follow_us')}</h3>
             <div className="flex space-x-4">
-              <Button variant="ghost" size="icon" className="text-slate-500 hover:text-blue-600">
+              <Button variant="ghost" size="icon" className="text-slate-500 hover:text-blue-600 dark:text-slate-200">
                 <Facebook className="h-5 w-5" />
               </Button>
-              <Button variant="ghost" size="icon" className="text-slate-500 hover:text-blue-400">
+              <Button variant="ghost" size="icon" className="text-slate-500 hover:text-blue-400 dark:text-slate-200">
                 <Twitter className="h-5 w-5" />
               </Button>
-              <Button variant="ghost" size="icon" className="text-slate-500 hover:text-pink-500">
+              <Button variant="ghost" size="icon" className="text-slate-500 hover:text-pink-500 dark:text-slate-200">
                 <Instagram className="h-5 w-5" />
               </Button>
-              <Button variant="ghost" size="icon" className="text-slate-500 hover:text-blue-700">
+              <Button variant="ghost" size="icon" className="text-slate-500 hover:text-blue-700 dark:text-slate-200">
                 <Linkedin className="h-5 w-5" />
               </Button>
             </div>

@@ -30,7 +30,7 @@ const Sidebar = ({ activeKey, onSelect }) => {
   ];
 
   return (
-    <Card className="w-[250px] bg-white/80 backdrop-blur border-0 shadow-lg">
+    <Card className="w-[250px] bg-white dark:bg-[#242526] border-0 shadow-lg dark:shadow-none dark:border-[#3a3b3c]">
       <CardContent className="p-4">
         <div className="space-y-2">
           <Button 
@@ -44,6 +44,7 @@ const Sidebar = ({ activeKey, onSelect }) => {
           <div className="space-y-1">
             {sidebarItems.map((item) => {
               const IconComponent = item.icon;
+              const isActive = activeKey === item.key;
               return (
                 <Button
                   key={item.key}
@@ -51,8 +52,8 @@ const Sidebar = ({ activeKey, onSelect }) => {
                   onClick={() => onSelect(item.key)}
                   className={`w-full justify-start gap-3 h-11
                     ${activeKey === item.key
-                      ? 'bg-[#c2e7ff] text-slate-900 border border-slate-200 pointer-events-none'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-[#bab9be]'}
+                      ? 'bg-[#c2e7ff] text-slate-900 border border-slate-200 pointer-events-none dark:bg-[#3a3b3c] dark:text-white dark:border-[#3a3b3c]'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-[#bab9be] dark:text-white dark:hover:text-white dark:hover:bg-[#3a3b3c]'}
                   `}
                 >
                   <IconComponent className="w-5 h-5" />
@@ -67,4 +68,4 @@ const Sidebar = ({ activeKey, onSelect }) => {
   );
 };
 
-export default Sidebar; 
+export default Sidebar;

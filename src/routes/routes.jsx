@@ -26,6 +26,7 @@ const privateRoutes = [
     // { path: '/admin',component: AdminLayout, layout: null, role: 'admin'},
     // { path: '/shipper',component: ShipperLayout, layout: null, role: 'shipper'},
     // { path: '/staff',component: StaffLayout, layout: null, role: 'staff'},
+
 ];
 
 export { publicRoutes, privateRoutes };
