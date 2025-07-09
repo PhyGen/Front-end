@@ -24,7 +24,6 @@ const Sidebar = ({ activeKey, onSelect }) => {
     { key: 'shared', label: t('shared_with_me'), icon: Share2 },
     { key: 'recent', label: t('recently'), icon: Clock },
     { key: 'starred', label: t('starred'), icon: Star },
-    { key: 'ai', label: t('ai_generate'), icon: Bot },
     { key: 'spam', label: t('spam_content'), icon: AlertTriangle },
     { key: 'trash', label: t('trash_can'), icon: Trash2 },
   ];
