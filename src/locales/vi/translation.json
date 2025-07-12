@@ -258,5 +258,16 @@
   "you_can_upload_1_image_file_up_to_8_mb": "Bạn có thể tải lên 1 tệp ảnh (tối đa 8 MB)",
   "remove_image": "Xóa ảnh",
   "back": "Quay lại",
-  "accept": "Chấp nhận"
+  "accept": "Chấp nhận",
+  "question_source": "Nguồn câu hỏi",
+  "enter_question_source": "Nhập nguồn câu hỏi",
+  "explanation": "Giải thích",
+  "enter_explanation": "Nhập giải thích",
+  "insert_symbol": "Chèn ký hiệu:",
+  "enter_explanation": "Nhập giải thích",
+  "enter_question": "Nhập câu hỏi",
+  "enter_solution": "Nhập lời giải",
+  "review_question_and_solution": "Xem lại câu hỏi và lời giải",
+  "no_source": "Không có nguồn",
+  "no_explanation": "Không có giải thích"
 } 
