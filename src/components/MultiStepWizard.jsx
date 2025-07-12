@@ -149,6 +149,7 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
   const [aiImage, setAiImage] = useState(null);
   const [dragActive, setDragActive] = useState(false);
   const inputRef = useRef();
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
   
   function handleDrop(e) {
     e.preventDefault();
@@ -182,6 +183,7 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
       prev.includes(id) ? prev.filter((q) => q !== id) : [...prev, id]
     );
   };
+  
 
   // --- API: Lấy gradeLevels khi mount ---
   React.useEffect(() => {
@@ -228,23 +230,23 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
   }, [grade]);
 
   // --- API: Lấy semesters khi chọn grade ---
-  React.useEffect(() => {
-    if (!grade) return;
-    (async () => {
-      try {
-        const res = await api.get(`/semesters/by-grade/${grade}`);
-        if (Array.isArray(res.data) && res.data.length > 0) {
-          setSemesters(res.data.map(s => ({ ...s, value: s.id, label: s.name, img: s.value === 1 ? semester1 : semester2 })));
-        } else {
-          setSemesters(mockSemesters);
-        }
-      } catch {
-        setSemesters(mockSemesters);
-      }
-    })();
-    // Reset các bước sau
-    setSemester(null); setChapter(null); setLesson(null); setChapters([]); setLessons([]); setQuestionList([]);
-  }, [grade]);
+  // React.useEffect(() => {
+  //   if (!grade) return;
+  //   (async () => {
+  //     try {
+  //       const res = await api.get(`/semesters/by-grade/${grade}`);
+  //       if (Array.isArray(res.data) && res.data.length > 0) {
+  //         setSemesters(res.data.map(s => ({ ...s, value: s.id, label: s.name, img: s.value === 1 ? semester1 : semester2 })));
+  //       } else {
+  //         setSemesters(mockSemesters);
+  //       }
+  //     } catch {
+  //       setSemesters(mockSemesters);
+  //     }
+  //   })();
+  //   // Reset các bước sau
+  //   setSemester(null); setChapter(null); setLesson(null); setChapters([]); setLessons([]); setQuestionList([]);
+  // }, [grade]);
 
   // --- API: Lấy chapters khi chọn semester ---
   React.useEffect(() => {
@@ -331,7 +333,10 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
                 'w-48 h-64 flex items-center justify-center cursor-pointer border-2 transition',
                 grade === g.value ? 'border-blue-500 shadow-lg' : 'border-slate-200 hover:border-blue-300'
               )}
-              onClick={() => setGrade(g.value)}
+              onClick={() => {
+                setGrade(g.value);
+                console.log("Grade được chọn",g.value);
+              }}
             >
               <CardContent className="flex items-center justify-center h-full">
                 <span className="text-6xl font-bold">{g.label}</span>
@@ -530,10 +535,7 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
             </div>
             <ReactQuill
               value={manualQuestion}
-              onChange={val => {
-                console.log('onChange manualQuestion:', val);
-                setManualQuestion(val);
-              }}
+              onChange={setManualQuestion}
               modules={quillModules}
               theme="snow"
               style={{ background: 'white', color: 'black' }}
@@ -553,7 +555,7 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
           <Button onClick={() => setStep(6)} className="bg-blue-500 hover:bg-blue-600">{t('back')}</Button>
           <Button
             onClick={() => setStep(8)}
-            disabled={!manualQuestion || manualQuestion === '<p><br></p>'}
+            disabled={!manualQuestion.trim() || !manualQuestionSource.trim()}
             className="bg-blue-500 hover:bg-blue-600"
           >
             {t('accept')}
@@ -605,7 +607,7 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
           <Button onClick={() => setStep(7)} className="bg-blue-500 hover:bg-blue-600">{t('back')}</Button>
           <Button
             onClick={() => setStep(9)}
-            disabled={!manualSolution.trim()}
+            disabled={!manualSolution.trim() || !manualExplanation.trim()}
             className="bg-blue-500 hover:bg-blue-600"
           >
             {t('accept')}
@@ -631,7 +633,7 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
           </div>
           <div className="mb-4">
             <div className="font-bold mb-1">{t('question')}:</div>
-            <div className="prose" dangerouslySetInnerHTML={{ __html: manualQuestion || '<span class="italic text-gray-400">(Chưa nhập câu hỏi)</span>' }} />
+            <div className="prose" dangerouslySetInnerHTML={{ __html: manualQuestion}} />
           </div>
           <div className="mb-4">
             <div className="font-bold mb-1">{t('question_source')}:</div>
@@ -649,15 +651,30 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
         <div className="flex justify-between mt-8">
           <Button onClick={() => setStep(8)} className="bg-blue-500 hover:bg-blue-600">{t('back')}</Button>
           <Button
-            onClick={() => onComplete({ grade, semester, chapter, lesson, difficulty: difficultyLevels[difficulty], questionType, manualQuestion, manualSolution, manualSolutionLink, manualQuestionSource, manualExplanation })}
+            onClick={() => setShowConfirmModal(true)}
             className="bg-blue-500 hover:bg-blue-600"
           >
-            {t('accept')}
+            {t('send')}
           </Button>
         </div>
+        {/* Modal xác nhận gửi */}
+        <Dialog open={showConfirmModal} onOpenChange={setShowConfirmModal}>
+          <DialogContent className="max-w-md mx-auto">
+            <DialogHeader>
+              <DialogTitle>Confirm Submission</DialogTitle>
+            </DialogHeader>
+            <div className="mb-4 text-center text-lg font-semibold">Are you sure you want to submit this information?</div>
+            <div className="mb-4 text-center text-sm text-gray-500">Once sent, it may not be editable.</div>
+            <div className="flex justify-center gap-4 mt-6">
+              <Button onClick={() => { setShowConfirmModal(false); setStep(10); }} className="bg-green-500 hover:bg-green-600">Confirm</Button>
+              <Button onClick={() => setShowConfirmModal(false)} className="bg-red-500 hover:bg-red-600">Back</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </>
     );
   }
+  // Step 7: Upload files (AI)
   else if (step === 7 && questionType === 'ai') {
     content = (
       <div className="flex flex-col items-center justify-center min-h-[420px]">
@@ -702,7 +719,59 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
           </div>
           <div className="flex justify-between mt-8">
             <Button onClick={() => setStep(6)} className="bg-blue-500 hover:bg-blue-600">{t('back')}</Button>
-            <Button onClick={() => onComplete({ grade, semester, chapter, lesson, difficulty: difficultyLevels[difficulty], questionType, aiImage })} disabled={!aiImage} className="bg-blue-500 hover:bg-blue-600">{t('accept')}</Button>
+            <Button onClick={() => setShowConfirmModal(true)} disabled={!aiImage} className="bg-blue-500 hover:bg-blue-600">{t('send')}</Button>
+          </div>
+        </div>
+        {/* Modal xác nhận gửi */}
+        <Dialog open={showConfirmModal} onOpenChange={setShowConfirmModal}>
+          <DialogContent className="max-w-md mx-auto">
+            <DialogHeader>
+              <DialogTitle>Confirm Submission</DialogTitle>
+            </DialogHeader>
+            <div className="mb-4 text-center text-lg font-semibold">Are you sure you want to submit this information?</div>
+            <div className="mb-4 text-center text-sm text-gray-500">Once sent, it may not be editable.</div>
+            <div className="flex justify-center gap-4 mt-6">
+              <Button onClick={() => { setShowConfirmModal(false); setStep(10); }} className="bg-green-500 hover:bg-green-600">Confirm</Button>
+              <Button onClick={() => setShowConfirmModal(false)} className="bg-red-500 hover:bg-red-600">Back</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  }
+  // Step cảm ơn
+  else if (step === 10) {
+    content = (
+      <div className="flex flex-col items-center justify-center min-h-[420px]">
+        <div className="flex flex-col items-center">
+          <div className="rounded-full bg-green-100 p-6 mb-4">
+            <svg width="80" height="80" viewBox="0 0 80 80">
+              <circle cx="40" cy="40" r="38" stroke="#4ade80" strokeWidth="4" fill="#f0fdf4" />
+              <polyline points="25,43 37,55 57,30" fill="none" stroke="#22c55e" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-green-600 mb-2">Thank you!</h2>
+          <p className="text-gray-600 mb-6">Your submission has been sent.</p>
+          <div className="flex gap-4">
+            <Button onClick={() => window.location.href = '/'} className="bg-blue-500 hover:bg-blue-600">Go Home</Button>
+            <Button onClick={() => {
+              // Reset wizard về bước đầu và các state liên quan
+              setGrade(null);
+              setSemester(null);
+              setChapter(null);
+              setLesson(null);
+              setDifficulty(0);
+              setSelectedExamType(null);
+              setSelectedQuestions([]);
+              setQuestionType(null);
+              setManualQuestion('');
+              setManualSolution('');
+              setManualSolutionLink('');
+              setManualQuestionSource('');
+              setManualExplanation('');
+              setAiImage(null);
+              if (typeof onComplete === 'function') onComplete();
+            }} className="bg-green-500 hover:bg-green-600">Continue Create</Button>
           </div>
         </div>
       </div>
