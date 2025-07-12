@@ -14,6 +14,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import { jwtDecode } from 'jwt-decode';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
+import ThemeSwitcher from '@/components/ThemeSwitcher';
 
 const SignIn = () => {
   const [error, setError] = useState('');
@@ -208,33 +209,34 @@ const SignIn = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-[#18191A] dark:via-[#18191A] dark:to-[#18191A] flex flex-col items-center justify-center p-4 transition-colors">
       <ToastContainer />
       
       {/* Logo & Heading */}
       <div className="flex flex-col items-center mb-8">
-        <div className="w-20 h-20 bg-white rounded-full shadow-lg flex items-center justify-center mb-4">
+        <div className="w-20 h-20 bg-white dark:bg-[#242526] rounded-full shadow-lg flex items-center justify-center mb-4">
           <img src={phygenLogo} alt="PhyGen Logo" className="w-16 h-16" />
         </div>
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+        <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent dark:text-white">
           {t('welcome_back')}
         </h1>
-        <p className="text-slate-600 mt-2">{t('sign_in_to_your_phygen_account')}</p>
+        <p className="text-slate-600 dark:text-neutral-300 mt-2">{t('sign_in_to_your_phygen_account')}</p>
       </div>
 
       {/* Form Card */}
-      <Card className="w-full max-w-md shadow-xl border-0 bg-white/80 backdrop-blur">
+      <Card className="w-full max-w-md shadow-xl border-0 bg-white/80 dark:bg-[#242526] dark:border-[#3a3b3c] backdrop-blur transition-colors">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-semibold text-center text-slate-800">
+          <CardTitle className="text-2xl font-semibold text-center text-slate-800 dark:text-white">
             {t('sign_in')}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="absolute top-4 right-4 z-10">
+          <div className="absolute top-4 right-4 z-10 flex gap-2">
             <LanguageSwitcher />
+            <ThemeSwitcher />
           </div>
           {error && (
-            <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+            <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-lg text-red-700 dark:text-red-300 text-sm">
               <AlertCircle className="w-4 h-4" />
               {error}
             </div>
@@ -242,12 +244,12 @@ const SignIn = () => {
 
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-slate-700 font-medium">
+              <Label htmlFor="email" className="text-slate-700 dark:text-white font-medium">
                 {t('email')}
               </Label>
               <div className="relative flex items-center h-9">
                 <span className="absolute left-3 inset-y-0 flex items-center">
-                  <Mail className="text-slate-400 w-4 h-4" />
+                  <Mail className="text-slate-400 dark:text-slate-300 w-4 h-4" />
                 </span>
                 <Input
                   id="email"
@@ -255,20 +257,20 @@ const SignIn = () => {
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-placeholder={t('enter_your_email')}
-                  className="pl-10 pr-3 border-slate-200 focus:border-blue-500 focus:ring-blue-500"
+                  placeholder={t('enter_your_email')}
+                  className="pl-10 pr-3 border-slate-200 dark:border-[#3a3b3c] dark:text-white dark:placeholder:text-neutral-400 focus:border-blue-500 focus:ring-blue-500 bg-transparent dark:bg-[#18191A]"
                   required
                 />
               </div>
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-slate-700 font-medium">
+              <Label htmlFor="password" className="text-slate-700 dark:text-white font-medium">
                 {t('password')}
               </Label>
               <div className="relative flex items-center h-9">
                 <span className="absolute left-3 inset-y-0 flex items-center">
-                  <Lock className="text-slate-400 w-4 h-4" />
+                  <Lock className="text-slate-400 dark:text-slate-300 w-4 h-4" />
                 </span>
                 <Input
                   id="password"
@@ -277,14 +279,14 @@ placeholder={t('enter_your_email')}
                   value={formData.password}
                   onChange={handleChange}
                   placeholder={t('enter_your_password')}
-                  className="pl-10 pr-12 border-slate-200 focus:border-blue-500 focus:ring-blue-500"
+                  className="pl-10 pr-12 border-slate-200 dark:border-[#3a3b3c] dark:text-white dark:placeholder:text-neutral-400 focus:border-blue-500 focus:ring-blue-500 bg-transparent dark:bg-[#18191A]"
                   required
                 />
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="absolute right-2 inset-y-0 flex items-center justify-center h-9 w-9 text-slate-400 hover:text-slate-600"
+                  className="absolute right-2 inset-y-0 flex items-center justify-center h-9 w-9 text-slate-400 dark:text-slate-300 hover:text-slate-600 dark:hover:text-white"
                   onClick={() => setShowPassword(!showPassword)}
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -295,7 +297,7 @@ placeholder={t('enter_your_email')}
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium py-2"
+              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium py-2 dark:bg-[#3a3b3c] dark:hover:bg-[#444] dark:text-white"
             >
               {isLoading ? t('signing_in') : t('sign_in')}
             </Button>
@@ -304,16 +306,16 @@ placeholder={t('enter_your_email')}
           <div className="relative my-6">
             <Separator />
             <div className="absolute inset-0 flex items-center justify-center">
-              <span className="bg-white px-2 text-slate-500 text-sm">{t('or_continue_with')}</span>
+              <span className="bg-white dark:bg-[#242526] px-2 text-slate-500 dark:text-neutral-300 text-sm">{t('or_continue_with')}</span>
             </div>
           </div>
 
           {/* Google Sign-In Button */}
           <div id="googleSignInDiv" className="w-full"></div>
 
-          <div className="text-center text-sm text-slate-600">
+          <div className="text-center text-sm text-slate-600 dark:text-neutral-300">
             {t('dont_have_account')} {' '}
-            <Link to="/signup" className="text-blue-600 hover:text-blue-700 font-medium">
+            <Link to="/signup" className="text-blue-600 hover:text-blue-700 font-medium dark:text-blue-400 dark:hover:text-blue-300">
               {t('sign_up_here')}
             </Link>
           </div>
@@ -321,12 +323,12 @@ placeholder={t('enter_your_email')}
       </Card>
 
       {/* Footer */}
-      <div className="mt-8 text-center text-xs text-slate-500 space-x-4">
-        <Link to="/privacy-policy" className="hover:text-slate-700">{t('terms_of_service')}</Link>
+      <div className="mt-8 text-center text-xs text-slate-500 dark:text-neutral-400 space-x-4">
+        <Link to="/privacy-policy" className="hover:text-slate-700 dark:hover:text-white">{t('terms_of_service')}</Link>
         <span>•</span>
-        <Link to="/privacy-policy" className="hover:text-slate-700">{t('privacy_policy')}</Link>
+        <Link to="/privacy-policy" className="hover:text-slate-700 dark:hover:text-white">{t('privacy_policy')}</Link>
         <span>•</span>
-<Link to="/data-deletion" className="hover:text-slate-700">{t('data_deletion')}</Link>
+        <Link to="/data-deletion" className="hover:text-slate-700 dark:hover:text-white">{t('data_deletion')}</Link>
       </div>
     </div>
   );

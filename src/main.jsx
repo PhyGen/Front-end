@@ -12,9 +12,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <AuthProvider>
       <SidebarProvider>
-        <ThemeProvider>
-          <App />
-        </ThemeProvider>
+        <App />
       </SidebarProvider>
     </AuthProvider>
   </React.StrictMode>,

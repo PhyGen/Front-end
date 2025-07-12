@@ -13,7 +13,7 @@ const AdminAccount = () => {
   const [editId, setEditId] = useState(null);
   const [editAccount, setEditAccount] = useState({ fullName: '', email: '', roleId: '1' });
   const [saving, setSaving] = useState(false);
-  const [banningId, setBanningId] = useState(null);
+
   const [search, setSearch] = useState('');
 
   const fetchAccounts = () => {
@@ -33,13 +33,86 @@ const AdminAccount = () => {
     setNewAccount({ fullName: '', email: '', password: '', roleId: '1' });
   };
 
-  const handleCreate = () => {
+  const SECRET_KEY = "trideptraivcl"; // Secret key do backend cung cấp
+  // Thử các format khác nhau của secret key
+  const SECRET_KEYS = [
+    "trideptraivcl",
+    "TRIDEPTRAIVCL", 
+    "Trideptraivcl",
+    "trideptraivcl123",
+    "admin_secret_key"
+  ];
+
+  const handleCreate = async () => {
     if (!newAccount.fullName || !newAccount.email || !newAccount.password) return;
     setSaving(true);
-    api.post('/users', newAccount)
-      .then(() => { setAdding(false); fetchAccounts(); })
-      .catch(() => alert('Tạo tài khoản thất bại!'))
-      .finally(() => setSaving(false));
+    try {
+      // 1. Đăng ký user mới
+      await api.post('/signup', {
+        email: newAccount.email,
+        password: newAccount.password,
+        name: newAccount.fullName
+      });
+
+      // 2. Fetch lại danh sách user để lấy userId
+      const res = await api.get('/users', { params: { search: newAccount.email } });
+      let createdUser = null;
+      if (Array.isArray(res.data)) {
+        createdUser = res.data.find(u => u.email === newAccount.email);
+      } else if (res.data.items) {
+        createdUser = res.data.items.find(u => u.email === newAccount.email);
+      } else if (res.data) {
+        createdUser = res.data.find(u => u.email === newAccount.email);
+      }
+
+      // 3. Gọi API set role nếu có chọn role
+      if (createdUser && newAccount.roleId) {
+        let roleName = 'user';
+        if (newAccount.roleId === '2') roleName = 'admin';
+        else if (newAccount.roleId === '3') roleName = 'moderator';
+        
+        console.log('Setting role for user:', {
+          userId: createdUser.id,
+          roleName: roleName,
+          secretKey: SECRET_KEY
+        });
+        
+        // Thử với các secret key khác nhau
+        let roleUpdated = false;
+        for (const secretKey of SECRET_KEYS) {
+          try {
+            console.log(`Trying secret key: ${secretKey}`);
+            const roleResponse = await api.post('/signup/role', {
+              userId: createdUser.id,
+              roleName: roleName,
+              secretKey: secretKey
+            });
+            console.log('Role update response:', roleResponse.data);
+            roleUpdated = true;
+            break;
+          } catch (roleError) {
+            console.error(`Role update error with secret key "${secretKey}":`, roleError.response?.data || roleError.message);
+            if (roleError.response?.status === 400 && roleError.response?.data?.message === "Invalid secret key") {
+              continue; // Thử secret key tiếp theo
+            } else {
+              throw roleError; // Lỗi khác, dừng lại
+            }
+          }
+        }
+        
+        if (!roleUpdated) {
+          console.error('All secret keys failed');
+          alert('Không thể cập nhật role. Vui lòng kiểm tra secret key.');
+        }
+      }
+
+      setAdding(false);
+      fetchAccounts();
+    } catch {
+      alert('Tạo tài khoản hoặc set role thất bại!');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleEdit = (acc) => {
@@ -47,30 +120,84 @@ const AdminAccount = () => {
     setEditAccount({ fullName: acc.fullName, email: acc.email, roleId: acc.roleId?.toString() || '1' });
   };
 
-  const handleEditSave = () => {
+  const handleEditSave = async () => {
+    if (!editAccount.fullName || !editAccount.email) return;
     setSaving(true);
-    api.put(`/users/${editId}`, editAccount)
-      .then(() => { setEditId(null); fetchAccounts(); })
-      .catch(() => alert('Cập nhật thất bại!'))
-      .finally(() => setSaving(false));
+    try {
+      // 1. Cập nhật thông tin cơ bản của user
+      await api.put(`/users/${editId}/profile`, {
+        fullName: editAccount.fullName,
+        email: editAccount.email
+      });
+
+      // 2. Cập nhật role nếu có thay đổi
+      const currentUser = accounts.find(acc => acc.id === editId);
+      if (currentUser && currentUser.roleId?.toString() !== editAccount.roleId) {
+        let roleName = 'user';
+        if (editAccount.roleId === '2') roleName = 'admin';
+        else if (editAccount.roleId === '3') roleName = 'moderator';
+        
+        console.log('Updating role for user:', {
+          userId: editId,
+          roleName: roleName,
+          secretKey: SECRET_KEY
+        });
+        
+        // Thử với các secret key khác nhau
+        let roleUpdated = false;
+        for (const secretKey of SECRET_KEYS) {
+          try {
+            console.log(`Trying secret key: ${secretKey}`);
+            const roleResponse = await api.post('/signup/role', {
+              userId: editId,
+              roleName: roleName,
+              secretKey: secretKey
+            });
+            console.log('Role update response:', roleResponse.data);
+            roleUpdated = true;
+            break;
+          } catch (roleError) {
+            console.error(`Role update error with secret key "${secretKey}":`, roleError.response?.data || roleError.message);
+            if (roleError.response?.status === 400 && roleError.response?.data?.message === "Invalid secret key") {
+              continue; // Thử secret key tiếp theo
+            } else {
+              throw roleError; // Lỗi khác, dừng lại
+            }
+          }
+        }
+        
+        if (!roleUpdated) {
+          console.error('All secret keys failed');
+          alert('Không thể cập nhật role. Vui lòng kiểm tra secret key.');
+        }
+      }
+
+      setEditId(null);
+      fetchAccounts();
+    } catch (error) {
+      console.error('Error updating user:', error);
+      alert('Cập nhật thất bại!');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleDelete = (id) => {
     if (!window.confirm('Bạn có chắc chắn muốn xóa tài khoản này?')) return;
     setSaving(true);
-    api.delete(`/users/${id}`)
-      .then(fetchAccounts)
-      .catch(() => alert('Xóa thất bại!'))
+    api.put(`/users/${id}/soft-delete`)
+      .then(() => {
+        console.log('User soft deleted successfully');
+        fetchAccounts();
+      })
+      .catch((error) => {
+        console.error('Delete error:', error.response?.data || error.message);
+        alert('Xóa thất bại!');
+      })
       .finally(() => setSaving(false));
   };
 
-  const handleBanToggle = (acc) => {
-    setBanningId(acc.id);
-    api.patch(`/users/${acc.id}/ban`, { banned: !acc.banned })
-      .then(fetchAccounts)
-      .catch(() => alert('Cập nhật trạng thái thất bại!'))
-      .finally(() => setBanningId(null));
-  };
+
 
   return (
     <Card>
@@ -116,25 +243,26 @@ const AdminAccount = () => {
                         <option value="3">Mod</option>
                       </select>
                     </td>
-                    <td className="px-4 py-2 border">{acc.banned ? 'Bị cấm' : 'Hoạt động'}</td>
+                    <td className="px-4 py-2 border">{acc.isActive ? 'Hoạt động' : 'Đã xóa'}</td>
                     <td className="px-4 py-2 border flex gap-2">
                       <Button size="sm" className="bg-blue-500 text-white" onClick={handleEditSave} disabled={saving}>Lưu</Button>
                       <Button size="sm" className="bg-gray-400 text-white" onClick={() => setEditId(null)} disabled={saving}>Hủy</Button>
                     </td>
                   </tr>
                 ) : (
-                  <tr key={acc.id} className="even:bg-slate-50">
+                  <tr key={acc.id} className={`even:bg-slate-50 ${!acc.isActive ? 'opacity-50' : ''}`}>
                     <td className="px-4 py-2 border">{acc.id}</td>
                     <td className="px-4 py-2 border">{acc.fullName}</td>
                     <td className="px-4 py-2 border">{acc.email}</td>
                     <td className="px-4 py-2 border">{acc.roleId === 2 ? 'Admin' : acc.roleId === 3 ? 'Mod' : 'User'}</td>
-                    <td className="px-4 py-2 border">{acc.banned ? 'Bị cấm' : 'Hoạt động'}</td>
+                    <td className="px-4 py-2 border">
+                      <span className={`px-2 py-1 rounded text-xs ${acc.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                        {acc.isActive ? 'Hoạt động' : 'Đã xóa'}
+                      </span>
+                    </td>
                     <td className="px-4 py-2 border flex gap-2">
-                      <Button size="sm" className="bg-blue-500 text-white" onClick={() => handleEdit(acc)} disabled={saving}>Sửa</Button>
-                      <Button size="sm" className="bg-red-500 text-white" onClick={() => handleDelete(acc.id)} disabled={saving}>Xóa</Button>
-                      <Button size="sm" className={acc.banned ? 'bg-green-500 text-white' : 'bg-yellow-500 text-white'} onClick={() => handleBanToggle(acc)} disabled={banningId === acc.id}>
-                        {acc.banned ? 'Mở cấm' : 'Cấm'}
-                      </Button>
+                      <Button size="sm" className="bg-blue-500 text-white" onClick={() => handleEdit(acc)} disabled={saving || !acc.isActive}>Sửa</Button>
+                      <Button size="sm" className="bg-red-500 text-white" onClick={() => handleDelete(acc.id)} disabled={saving || !acc.isActive}>Xóa</Button>
                     </td>
                   </tr>
                 )

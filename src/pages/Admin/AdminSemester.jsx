@@ -29,8 +29,6 @@ const AdminSemester = () => {
   const [editRow, setEditRow] = useState({ id: '', name: '', gradeId: '' });
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
-  const [filterName, setFilterName] = useState('');
-  const [filterGradeId, setFilterGradeId] = useState('');
 
   const fetchData = () => {
     setLoading(true);
@@ -87,7 +85,7 @@ const AdminSemester = () => {
       setEditId(null);
       setEditRow({ id: '', name: '', gradeId: '' });
       fetchData();
-    } catch (e) {
+    } catch {
       alert('Lưu thất bại!');
     } finally {
       setSaving(false);
@@ -100,7 +98,7 @@ const AdminSemester = () => {
     try {
       await api.delete(`/semesters/${id}`);
       fetchData();
-    } catch (e) {
+    } catch {
       alert('Xóa thất bại!');
     } finally {
       setDeletingId(null);
@@ -118,7 +116,11 @@ const AdminSemester = () => {
           <Select value={newSemester.gradeId} onValueChange={v => setNewSemester(s => ({ ...s, gradeId: v }))}>
             <SelectTrigger className="w-32"><SelectValue placeholder="Chọn lớp" /></SelectTrigger>
             <SelectContent>
-              {grades.map(g => <SelectItem key={g.id} value={g.id.toString()}>{g.name}</SelectItem>)}
+              {grades.filter(g => g.id !== undefined && g.id !== null && g.id !== '').map(g => (
+                <SelectItem key={g.id} value={g.id.toString()}>
+                  {g.name}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
           <Button onClick={handleAdd} className="flex items-center gap-1 bg-black hover:bg-neutral-800 text-white">
@@ -144,10 +146,7 @@ const AdminSemester = () => {
                 </tr>
               </thead>
               <tbody>
-                {semesters.filter(s =>
-                  s.name.toLowerCase().includes(filterName.toLowerCase()) &&
-                  (filterGradeId === "" || s.gradeId?.toString() === filterGradeId)
-                ).map(s => (
+                {semesters.map(s => (
                   editId === s.id ? (
                     <tr key={s.id} className="bg-yellow-50">
                       <td className="px-4 py-2 border font-semibold">{editRow.id}</td>
@@ -158,8 +157,10 @@ const AdminSemester = () => {
                         <Select value={editRow.gradeId} onValueChange={v => setEditRow(r => ({ ...r, gradeId: v }))}>
                           <SelectTrigger className="w-32"><SelectValue placeholder="Chọn lớp" /></SelectTrigger>
                           <SelectContent>
-                            {grades.map(g => (
-                              <SelectItem key={g.id} value={g.id.toString()}>{g.name}</SelectItem>
+                            {grades.filter(g => g.id !== undefined && g.id !== null && g.id !== '').map(g => (
+                              <SelectItem key={g.id} value={g.id.toString()}>
+                                {g.name}
+                              </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
@@ -167,8 +168,8 @@ const AdminSemester = () => {
                       <td className="px-4 py-2 border">{formatDate(s.createdAt)}</td>
                       <td className="px-4 py-2 border">{formatDate(s.updatedAt)}</td>
                       <td className="px-4 py-2 border flex gap-2">
-                        <Button size="sm" className="bg-blue-500 hover:bg-blue-600 text-white" onClick={handleEditSave} disabled={!editRow.name.trim() || !editRow.gradeId}>Save</Button>
-                        <Button size="sm" className="bg-gray-400 hover:bg-gray-500 text-white" onClick={() => setEditId(null)}>Cancel</Button>
+                        <Button size="sm" className="bg-blue-500 hover:bg-blue-600 text-white" onClick={handleEditSave} disabled={saving || !editRow.name.trim() || !editRow.gradeId}>Save</Button>
+                        <Button size="sm" className="bg-gray-400 hover:bg-gray-500 text-white" onClick={() => setEditId(null)} disabled={saving}>Cancel</Button>
                       </td>
                     </tr>
                   ) : (
@@ -179,14 +180,16 @@ const AdminSemester = () => {
                       <td className="px-4 py-2 border">{formatDate(s.createdAt)}</td>
                       <td className="px-4 py-2 border">{formatDate(s.updatedAt)}</td>
                       <td className="px-4 py-2 border flex gap-2">
-                        <Button size="sm" className="bg-blue-500 hover:bg-blue-600 text-white" onClick={() => handleEdit(s.id)}>Edit</Button>
-                        <Button size="sm" className="bg-red-500 hover:bg-red-600 text-white" onClick={() => handleDelete(s.id)}>Delete</Button>
+                        <Button size="sm" className="bg-blue-500 hover:bg-blue-600 text-white" onClick={() => handleEdit(s.id)} disabled={saving}>Edit</Button>
+                        <Button size="sm" className="bg-red-500 hover:bg-red-600 text-white" onClick={() => handleDelete(s.id)} disabled={deletingId === s.id}>
+                          {deletingId === s.id ? '...' : 'Delete'}
+                        </Button>
                       </td>
                     </tr>
                   )
                 ))}
                 {adding && (
-                  <tr className="bg-yellow-50">
+                  <tr key="adding" className="bg-yellow-50">
                     <td className="px-4 py-2 border font-semibold">{newRow.id}</td>
                     <td className="px-4 py-2 border">
                       <Input value={newRow.name} onChange={e => setNewRow(r => ({ ...r, name: e.target.value }))} placeholder="Nhập tên học kỳ" />
@@ -195,8 +198,10 @@ const AdminSemester = () => {
                       <Select value={newRow.gradeId} onValueChange={v => setNewRow(r => ({ ...r, gradeId: v }))}>
                         <SelectTrigger className="w-32"><SelectValue placeholder="Chọn lớp" /></SelectTrigger>
                         <SelectContent>
-                          {grades.map(g => (
-                            <SelectItem key={g.id} value={g.id.toString()}>{g.name}</SelectItem>
+                          {grades.filter(g => g.id !== undefined && g.id !== null && g.id !== '').map(g => (
+                            <SelectItem key={g.id} value={g.id.toString()}>
+                              {g.name}
+                            </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>

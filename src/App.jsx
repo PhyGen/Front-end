@@ -6,6 +6,7 @@ import ErrorPage from "./pages/ErrorPage";
 import ProtectedRoute from '../src/routes/protectRoutes';
 import { AuthProvider } from './context/AuthContext';
 import { SidebarProvider } from './context/SidebarContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { useAuth } from './context/AuthContext';
 
 function AppRoutes() {
@@ -14,13 +15,6 @@ function AppRoutes() {
   if (loading) {
     return <div>Loading...</div>;
   }
-
-  // Tạo một mảng chứa tất cả các path hợp lệ
-  const validPaths = [
-    ...publicRoutes.map(route => route.path),
-    ...privateRoutes.map(route => route.path),
-    '/', // Thêm path mặc định
-  ];
 
   return (
     <Routes>
@@ -98,9 +92,11 @@ function App() {
     <AuthProvider>
       <SidebarProvider>
         <Router>
-          <div className="App">
-            <AppRoutes />
-          </div>
+          <ThemeProvider>
+            <div className="App">
+              <AppRoutes />
+            </div>
+          </ThemeProvider>
         </Router>
       </SidebarProvider>
     </AuthProvider>

@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useAuth } from './AuthContext';
+import { useLocation } from 'react-router-dom';
 
 const ThemeContext = createContext();
 
@@ -11,11 +13,30 @@ export const useTheme = () => {
 };
 
 export const ThemeProvider = ({ children }) => {
+  const { user } = useAuth();
+  const location = useLocation();
+  
   const getSystemTheme = () => {
     if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
       return 'dark';
     }
     return 'light';
+  };
+
+  // Kiểm tra xem có nên áp dụng dark mode hay không
+  const shouldApplyDarkMode = () => {
+    // Luôn áp dụng cho trang signin và signup
+    if (location.pathname === '/signin' || location.pathname === '/signup') {
+      return true;
+    }
+    
+    // Chỉ áp dụng cho user role (roleId = "1")
+    if (user && user.roleId === "1") {
+      return true;
+    }
+    
+    // Không áp dụng cho admin (roleId = "2") và moderator (roleId = "3")
+    return false;
   };
 
   const [theme, setTheme] = useState(() => {
@@ -24,13 +45,14 @@ export const ThemeProvider = ({ children }) => {
     return 'auto';
   });
 
-  //auto
+  // Effect cho auto theme
   useEffect(() => {
-    if (theme !== 'auto') return;
+    if (theme !== 'auto' || !shouldApplyDarkMode()) return;
+    
     const media = window.matchMedia('(prefers-color-scheme: dark)');
     const handler = () => {
       const root = document.documentElement;
-      if (media.matches) {
+      if (media.matches && shouldApplyDarkMode()) {
         root.classList.add('dark');
       } else {
         root.classList.remove('dark');
@@ -39,11 +61,19 @@ export const ThemeProvider = ({ children }) => {
     media.addEventListener('change', handler);
     handler();
     return () => media.removeEventListener('change', handler);
-  }, [theme]);
+  }, [theme, location.pathname, user]);
 
+  // Effect chính để áp dụng theme
   useEffect(() => {
     localStorage.setItem('theme', theme);
     const root = document.documentElement;
+    
+    // Nếu không nên áp dụng dark mode, luôn set về light
+    if (!shouldApplyDarkMode()) {
+      root.classList.remove('dark');
+      return;
+    }
+    
     if (theme === 'dark') {
       root.classList.add('dark');
     } else if (theme === 'light') {
@@ -51,7 +81,7 @@ export const ThemeProvider = ({ children }) => {
     } else if (theme === 'auto') {
       // Đã xử lý ở effect trên
     }
-  }, [theme]);
+  }, [theme, location.pathname, user]);
 
   const changeTheme = (newTheme) => {
     setTheme(newTheme);
@@ -60,6 +90,7 @@ export const ThemeProvider = ({ children }) => {
   const value = {
     theme,
     changeTheme,
+    shouldApplyDarkMode: shouldApplyDarkMode(),
   };
 
   return (
