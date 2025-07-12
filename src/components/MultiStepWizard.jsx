@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import api from '@/config/axios';
+import { decodeBase64Id } from '@/config/Base64Decode';
 import KNTT from '@/assets/icons/KNTT.png';
 import CD from '@/assets/icons/CD.png';
 import CTST from '@/assets/icons/CTST.png';
@@ -120,6 +121,8 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
   const [manualQuestion, setManualQuestion] = useState('');
   const [manualSolution, setManualSolution] = useState('');
   const [manualSolutionLink, setManualSolutionLink] = useState('');
+  const [manualQuestionSource, setManualQuestionSource] = useState('');
+  const [manualExplanation, setManualExplanation] = useState('');
   const physicsSymbols = [
     { symbol: 'Δ', label: 'Delta' },
     { symbol: 'λ', label: 'Lambda' },
@@ -186,7 +189,17 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
       try {
         const res = await api.get('/grades');
         if (Array.isArray(res.data) && res.data.length > 0) {
-          setGradeLevels(res.data.map(g => ({ ...g, label: g.name, value: g.encodedId || g.id })));
+          setGradeLevels(res.data.map(g => {
+            // Giải mã encodedId thành id thực tế
+            const decodedId = decodeBase64Id(g.encodedId);
+            console.log("Id được giãi mã",decodedId);
+            return { 
+              ...g, 
+              label: g.name, 
+              value: decodedId || g.id, // Sử dụng decodedId nếu có, fallback về g.id
+              originalId: decodedId || g.id // Lưu id thực tế để sử dụng sau này
+            };
+          }));
         } else {
           setGradeLevels(mockGradeLevels);
         }
@@ -500,11 +513,12 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
         </div>
       </>
     );
-  } else if (step === 7 && questionType === 'manual') {
-    // UI form nhập thủ công
+  }
+  // Step 7: Nhập câu hỏi
+  else if (step === 7 && questionType === 'manual') {
     content = (
       <>
-        <div className="text-2xl font-semibold text-center mb-6">{t('enter_question_and_solution')}</div>
+        <div className="text-2xl font-semibold text-center mb-6">{t('enter_question')}</div>
         <form className="space-y-6 max-w-2xl mx-auto">
           <div>
             <label className="block font-semibold mb-2">{t('question')}</label>
@@ -516,12 +530,44 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
             </div>
             <ReactQuill
               value={manualQuestion}
-              onChange={setManualQuestion}
+              onChange={val => {
+                console.log('onChange manualQuestion:', val);
+                setManualQuestion(val);
+              }}
               modules={quillModules}
               theme="snow"
               style={{ background: 'white', color: 'black' }}
             />
           </div>
+          <div>
+            <label className="block font-semibold mb-2">{t('question_source')}</label>
+            <ShadInput
+              value={manualQuestionSource}
+              onChange={e => setManualQuestionSource(e.target.value)}
+              className="bg-white text-black border border-slate-300 rounded-lg p-3"
+              placeholder={t('enter_question_source')}
+            />
+          </div>
+        </form>
+        <div className="flex justify-between mt-8">
+          <Button onClick={() => setStep(6)} className="bg-blue-500 hover:bg-blue-600">{t('back')}</Button>
+          <Button
+            onClick={() => setStep(8)}
+            disabled={!manualQuestion || manualQuestion === '<p><br></p>'}
+            className="bg-blue-500 hover:bg-blue-600"
+          >
+            {t('accept')}
+          </Button>
+        </div>
+      </>
+    );
+  }
+  // Step 8: Nhập lời giải
+  else if (step === 8 && questionType === 'manual') {
+    content = (
+      <>
+        <div className="text-2xl font-semibold text-center mb-6">{t('enter_solution')}</div>
+        <form className="space-y-6 max-w-2xl mx-auto">
           <div>
             <label className="block font-semibold mb-2">{t('solution')}</label>
             <div className="flex items-center gap-2 mb-1">
@@ -539,20 +585,27 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
             />
           </div>
           <div>
-            <label className="block font-semibold mb-2">{t('solution_link')}</label>
-            <ShadInput
-              value={manualSolutionLink}
-              onChange={e => setManualSolutionLink(e.target.value)}
-              className="bg-white text-black border border-slate-300 rounded-lg p-3"
-              placeholder={t('enter_solution_link_if_any')}
+            <label className="block font-semibold mb-2">{t('explanation')}</label>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="font-medium">{t('insert_symbol')}</span>
+              {physicsSymbols.map(s => (
+                <button type="button" key={s.symbol} className="px-2 py-1 rounded hover:bg-blue-100 text-lg" onClick={() => setManualExplanation(manualExplanation + s.symbol)} title={s.label}>{s.symbol}</button>
+              ))}
+            </div>
+            <ReactQuill
+              value={manualExplanation}
+              onChange={setManualExplanation}
+              modules={quillModules}
+              theme="snow"
+              style={{ background: 'white', color: 'black' }}
             />
           </div>
         </form>
         <div className="flex justify-between mt-8">
-          <Button onClick={() => setStep(6)} className="bg-blue-500 hover:bg-blue-600">{t('back')}</Button>
+          <Button onClick={() => setStep(7)} className="bg-blue-500 hover:bg-blue-600">{t('back')}</Button>
           <Button
-            onClick={() => onComplete({ grade, semester, chapter, lesson, difficulty: difficultyLevels[difficulty], questionType, manualQuestion, manualSolution, manualSolutionLink })}
-            disabled={!manualQuestion.trim() || !manualSolution.trim()}
+            onClick={() => setStep(9)}
+            disabled={!manualSolution.trim()}
             className="bg-blue-500 hover:bg-blue-600"
           >
             {t('accept')}
@@ -560,7 +613,52 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
         </div>
       </>
     );
-  } else if (step === 7 && questionType === 'ai') {
+  }
+  // Step 9: Thông tin câu hỏi và lời giải
+  else if (step === 9 && questionType === 'manual') {
+    const lessonObj = lessons.find(l => l.id === lesson);
+    const lessonName = lessonObj ? lessonObj.title : t('no_lesson');
+    const difficultyLabel = difficultyLevels[difficulty] || '';
+    content = (
+      <>
+        <div className="text-2xl font-semibold text-center mb-6">{t('review_question_and_solution')}</div>
+        <div className="max-w-2xl mx-auto bg-slate-50 rounded-lg p-6 border mb-8">
+          <div className="mb-4">
+            <span className="font-bold">{t('difficulty_level')}:</span> {difficultyLabel}
+          </div>
+          <div className="mb-4">
+            <span className="font-bold">{t('lesson')}:</span> {lessonName}
+          </div>
+          <div className="mb-4">
+            <div className="font-bold mb-1">{t('question')}:</div>
+            <div className="prose" dangerouslySetInnerHTML={{ __html: manualQuestion || '<span class="italic text-gray-400">(Chưa nhập câu hỏi)</span>' }} />
+          </div>
+          <div className="mb-4">
+            <div className="font-bold mb-1">{t('question_source')}:</div>
+            <div>{manualQuestionSource || <span className="italic text-gray-400">({t('no_source')})</span>}</div>
+          </div>
+          <div className="mb-4">
+            <div className="font-bold mb-1">{t('solution')}:</div>
+            <div className="prose" dangerouslySetInnerHTML={{ __html: manualSolution }} />
+          </div>
+          <div>
+            <div className="font-bold mb-1">{t('explanation')}:</div>
+            <div className="prose" dangerouslySetInnerHTML={{ __html: manualExplanation }} />
+          </div>
+        </div>
+        <div className="flex justify-between mt-8">
+          <Button onClick={() => setStep(8)} className="bg-blue-500 hover:bg-blue-600">{t('back')}</Button>
+          <Button
+            onClick={() => onComplete({ grade, semester, chapter, lesson, difficulty: difficultyLevels[difficulty], questionType, manualQuestion, manualSolution, manualSolutionLink, manualQuestionSource, manualExplanation })}
+            className="bg-blue-500 hover:bg-blue-600"
+          >
+            {t('accept')}
+          </Button>
+        </div>
+      </>
+    );
+  }
+  else if (step === 7 && questionType === 'ai') {
     content = (
       <div className="flex flex-col items-center justify-center min-h-[420px]">
         <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-xl">

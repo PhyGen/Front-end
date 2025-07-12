@@ -258,5 +258,16 @@
   "you_can_upload_1_image_file_up_to_8_mb": "You can upload 1 image file (up to 8 MB)",
   "remove_image": "Remove image",
   "back": "Back",
-  "accept": "Accept"
+  "accept": "Accept",
+  "question_source": "Question Source",
+  "enter_question_source": "Enter question source",
+  "explanation": "Explanation",
+  "enter_explanation": "Enter explanation",
+  "insert_symbol": "Insert symbol:",
+  "enter_explanation": "Enter explanation",
+  "enter_question": "Enter question",
+  "enter_solution": "Enter solution",
+  "review_question_and_solution": "Review question and solution",
+  "no_source": "No source",
+  "no_explanation": "No explanation"
 } 
