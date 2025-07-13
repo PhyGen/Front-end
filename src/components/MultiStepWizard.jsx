@@ -1,4 +1,4 @@
-import React, { useState,useRef } from 'react';
+import React, { useState,useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Stepper, Step } from '@/components/ui/stepper';
@@ -47,37 +47,37 @@ const stepsExam = [
 ];
 
 // --- MOCK DATA (giữ lại để fallback khi API lỗi/null) ---
-const mockGradeLevels = [{value:10,label:'10'},{value:11,label:'11'},{value:12,label:'12'}];
+const mockGradeLevels = [{value:10,name:'10'},{value:11,name:'11'},{value:12,name:'12'}];
 const mockTextbooks = [
   { id: 1, name: 'Kết nối tri thức với cuộc sống', img: KNTT },
   { id: 2, name: 'Cánh diều', img: CD },
   { id: 3, name: 'Chân trời sáng tạo', img: CTST },
 ];
 const mockSemesters = [
-  { value: 1, label: '1st Semester', img: semester1 },
+  { value: 1, name: '1st Semester', img: semester1 },
   { value: 2, label: '2nd Semester', img: semester2 },
 ];
 const mockChapters = [
-  { id: 1, title: 'Chương I : Mở đầu', semesterId: 1 },
-  { id: 2, title: 'Chương II. Động học', semesterId: 1 },
-  { id: 3, title: 'Chương III. Động lực học', semesterId: 1 },
-  { id: 4, title: 'Chương IV. Năng lượng, công, công suất', semesterId: 2 },
-  { id: 5, title: 'Chương V. Động lượng', semesterId: 2 },
-  { id: 6, title: 'Chương VI. Chuyển động tròn', semesterId: 2 },
-  { id: 7, title: 'Chương VII. Biến dạng của vật rắn. Áp', semesterId: 2 },
+  { id: 1, name: 'Chương I : Mở đầu', semesterId: 1 },
+  { id: 2, name: 'Chương II. Động học', semesterId: 1 },
+  { id: 3, name: 'Chương III. Động lực học', semesterId: 1 },
+  { id: 4, name: 'Chương IV. Năng lượng, công, công suất', semesterId: 2 },
+  { id: 5, name: 'Chương V. Động lượng', semesterId: 2 },
+  { id: 6, name: 'Chương VI. Chuyển động tròn', semesterId: 2 },
+  { id: 7, name: 'Chương VII. Biến dạng của vật rắn. Áp', semesterId: 2 },
 ];
 const mockLessons = [
-  { id: 1, title: 'Bài 4. Độ dịch chuyển và quãng đường đi được', chapterId: 1 },
-  { id: 2, title: 'Bài 5. Tốc độ và vận tốc', chapterId: 1 },
-  { id: 3, title: 'Bài 6. Thực hành: Đo tốc độ của vật chuyển động', chapterId: 2 },
-  { id: 4, title: 'Bài 7. Đồ thị độ dịch chuyển - thời gian', chapterId: 2 },
-  { id: 5, title: 'Bài 8. Chuyển động biến đổi. Gia tốc', chapterId: 3 },
-  { id: 6, title: 'Bài 9. Chuyển động thẳng biến đổi đều', chapterId: 3 },
-  { id: 7, title: 'Bài 10. Sự rơi tự do', chapterId: 4 },
+  { id: 1, name: 'Bài 4. Độ dịch chuyển và quãng đường đi được', chapterId: 1 },
+  { id: 2, name: 'Bài 5. Tốc độ và vận tốc', chapterId: 1 },
+  { id: 3, name: 'Bài 6. Thực hành: Đo tốc độ của vật chuyển động', chapterId: 2 },
+  { id: 4, name: 'Bài 7. Đồ thị độ dịch chuyển - thời gian', chapterId: 2 },
+  { id: 5, name: 'Bài 8. Chuyển động biến đổi. Gia tốc', chapterId: 3 },
+  { id: 6, name: 'Bài 9. Chuyển động thẳng biến đổi đều', chapterId: 3 },
+  { id: 7, name: 'Bài 10. Sự rơi tự do', chapterId: 4 },
 ];
 const mockQuestionList = [
-  { id: 1, title: 'The Question', avatar: avatarIcon, lessonId: 1 },
-  { id: 2, title: 'The Question', avatar: avatarIcon, lessonId: 1 },
+  { id: 1, name: 'The Question', avatar: avatarIcon, lessonId: 1 },
+  { id: 2, name: 'The Question', avatar: avatarIcon, lessonId: 1 },
 ];
 // --- END MOCK DATA ---
 
@@ -150,7 +150,8 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
   const [dragActive, setDragActive] = useState(false);
   const inputRef = useRef();
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-  
+  const [textResult, setTextResult] = useState('');
+
   function handleDrop(e) {
     e.preventDefault();
     setDragActive(false);
@@ -167,15 +168,23 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
     e.preventDefault();
     setDragActive(false);
   }
+
   function handleFileChange(e) {
     const file = e.target.files[0];
     if (file && file.type.startsWith('image/')) {
       setAiImage(file);
+      handleImage(file);
     }
   }
+
+  const handleImage = async (file) => {
+
+  };
+  
   function handleRemove() {
     setAiImage(null);
     if (inputRef.current) inputRef.current.value = '';
+    setTextResult('');
   }
 
   const handleSelectQuestion = (id) => {
@@ -184,28 +193,37 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
     );
   };
   
+  React.useEffect(()=>{
+    console.log("Cái question sao không lưu được",manualQuestion);
+  },[manualQuestion])
 
   // --- API: Lấy gradeLevels khi mount ---
   React.useEffect(() => {
     (async () => {
       try {
+        console.log('🔍 Fetching grade levels...');
         const res = await api.get('/grades');
+        console.log('📊 Grade levels API response:', res.data);
         if (Array.isArray(res.data) && res.data.length > 0) {
-          setGradeLevels(res.data.map(g => {
+          const mappedGrades = res.data.map(g => {
             // Giải mã encodedId thành id thực tế
             const decodedId = decodeBase64Id(g.encodedId);
-            console.log("Id được giãi mã",decodedId);
+            console.log("🔓 Decoded ID for grade:", g.name, "Original:", g.encodedId, "Decoded:", decodedId);
             return { 
               ...g, 
               label: g.name, 
               value: decodedId || g.id, // Sử dụng decodedId nếu có, fallback về g.id
               originalId: decodedId || g.id // Lưu id thực tế để sử dụng sau này
             };
-          }));
+          });
+          console.log('✅ Mapped grade levels:', mappedGrades);
+          setGradeLevels(mappedGrades);
         } else {
+          console.log('⚠️ No grade levels found, using mock data');
           setGradeLevels(mockGradeLevels);
         }
-      } catch {
+      } catch (error) {
+        console.error('❌ Error fetching grade levels:', error);
         setGradeLevels(mockGradeLevels);
       }
     })();
@@ -216,13 +234,19 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
     if (!grade) return;
     (async () => {
       try {
+        console.log('🔍 Fetching textbooks for grade:', grade);
         const res = await api.get('/text-books');
+        console.log('📚 All textbooks from API:', res.data);
         if (Array.isArray(res.data) && res.data.length > 0) {
-          setTextbooks(res.data.filter(tb => tb.gradeId === grade));
+          const filteredTextbooks = res.data.filter(tb => tb.gradeId === grade);
+          console.log('✅ Filtered textbooks for grade', grade, ':', filteredTextbooks);
+          setTextbooks(filteredTextbooks);
         } else {
+          console.log('⚠️ No textbooks found, using mock data');
           setTextbooks(mockTextbooks);
         }
-      } catch {
+      } catch (error) {
+        console.error('❌ Error fetching textbooks:', error);
         setTextbooks(mockTextbooks);
       }
     })();
@@ -230,36 +254,48 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
   }, [grade]);
 
   // --- API: Lấy semesters khi chọn grade ---
-  // React.useEffect(() => {
-  //   if (!grade) return;
-  //   (async () => {
-  //     try {
-  //       const res = await api.get(`/semesters/by-grade/${grade}`);
-  //       if (Array.isArray(res.data) && res.data.length > 0) {
-  //         setSemesters(res.data.map(s => ({ ...s, value: s.id, label: s.name, img: s.value === 1 ? semester1 : semester2 })));
-  //       } else {
-  //         setSemesters(mockSemesters);
-  //       }
-  //     } catch {
-  //       setSemesters(mockSemesters);
-  //     }
-  //   })();
-  //   // Reset các bước sau
-  //   setSemester(null); setChapter(null); setLesson(null); setChapters([]); setLessons([]); setQuestionList([]);
-  // }, [grade]);
+  React.useEffect(() => {
+    if (!grade) return;
+    (async () => {
+      try {
+        console.log('🔍 Fetching semesters for grade:', grade);
+        const res = await api.get(`/semesters/by-grade/${grade}`);
+        console.log('📅 Semesters API response:', res.data);
+        if (Array.isArray(res.data) && res.data.length > 0) {
+          const mappedSemesters = res.data.map(s => ({ ...s, value: s.id, label: s.name, img: s.value === 1 ? semester1 : semester2 }));
+          console.log('✅ Mapped semesters:', mappedSemesters);
+          setSemesters(mappedSemesters);
+        } else {
+          console.log('⚠️ No semesters found, using mock data');
+          setSemesters(mockSemesters);
+        }
+      } catch (error) {
+        console.error('❌ Error fetching semesters:', error);
+        setSemesters(mockSemesters);
+      }
+    })();
+    // Reset các bước sau
+    setSemester(null); setChapter(null); setLesson(null); setChapters([]); setLessons([]); setQuestionList([]);
+  }, [grade]);
 
   // --- API: Lấy chapters khi chọn semester ---
   React.useEffect(() => {
     if (!semester) return;
     (async () => {
       try {
+        console.log('🔍 Fetching chapters for semester:', semester);
         const res = await api.get('/chapters');
+        console.log('📖 All chapters from API:', res.data);
         if (Array.isArray(res.data) && res.data.length > 0) {
-          setChapters(res.data.filter(c => c.semesterId === semester));
+          const filteredChapters = res.data.filter(c => c.semesterId === semester);
+          console.log('✅ Filtered chapters for semester', semester, ':', filteredChapters);
+          setChapters(filteredChapters);
         } else {
+          console.log('⚠️ No chapters found, using mock data');
           setChapters(mockChapters.filter(c => c.semesterId === semester));
         }
-      } catch {
+      } catch (error) {
+        console.error('❌ Error fetching chapters:', error);
         setChapters(mockChapters.filter(c => c.semesterId === semester));
       }
     })();
@@ -271,13 +307,18 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
     if (!chapter) return;
     (async () => {
       try {
+        console.log('🔍 Fetching lessons for chapter:', chapter);
         const res = await api.get(`/lessons?chapterId=${chapter}`);
+        console.log('📚 Lessons API response:', res.data);
         if (res.data && Array.isArray(res.data.items) && res.data.items.length > 0) {
+          console.log('✅ Lessons found:', res.data.items);
           setLessons(res.data.items);
         } else {
+          console.log('⚠️ No lessons found, using mock data');
           setLessons(mockLessons.filter(l => l.chapterId === chapter));
         }
-      } catch {
+      } catch (error) {
+        console.error('❌ Error fetching lessons:', error);
         setLessons(mockLessons.filter(l => l.chapterId === chapter));
       }
     })();
@@ -289,13 +330,18 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
     if (!lesson) return;
     (async () => {
       try {
+        console.log('🔍 Fetching questions for lesson:', lesson);
         const res = await api.get(`/questions?lessonId=${lesson}`);
+        console.log('❓ Questions API response:', res.data);
         if (res.data && Array.isArray(res.data.items) && res.data.items.length > 0) {
+          console.log('✅ Questions found:', res.data.items);
           setQuestionList(res.data.items);
         } else {
+          console.log('⚠️ No questions found, using mock data');
           setQuestionList(mockQuestionList.filter(q => q.lessonId === lesson));
         }
-      } catch {
+      } catch (error) {
+        console.error('❌ Error fetching questions:', error);
         setQuestionList(mockQuestionList.filter(q => q.lessonId === lesson));
       }
     })();
@@ -335,7 +381,7 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
               )}
               onClick={() => {
                 setGrade(g.value);
-                console.log("Grade được chọn",g.value);
+                console.log("🎯 Grade selected:", g.value, "Label:", g.label);
               }}
             >
               <CardContent className="flex items-center justify-center h-full">
@@ -367,7 +413,7 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
               onClick={() => setTextbook(tb.id)}
             >
               <CardContent className="flex flex-col items-center justify-center h-full w-full">
-                <img src={tb.img} alt={tb.name} className="w-40 h-40 object-contain mb-4" />
+                {/* <img src={tb.img} alt={tb.name} className="w-40 h-40 object-contain mb-4" /> */}
                 <span className="text-xl font-bold text-center leading-tight">{tb.name}</span>
               </CardContent>
             </Card>
@@ -395,7 +441,8 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
               onClick={() => setSemester(s.value)}
             >
               <CardContent className="flex items-center justify-center h-full">
-                <img src={s.img} alt={s.label} className="w-40 h-40 object-contain" />
+                {/* <img src={s.img} alt={s.label} className="w-40 h-40 object-contain" /> */}
+                <span className="text-xl font-bold text-center leading-tight">{s.name}</span>
               </CardContent>
             </Card>
           ))}
@@ -422,7 +469,7 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
               onClick={() => setChapter(c.id)}
             >
               <CardContent className="p-2">
-                <span className="text-sm font-medium">{c.title}</span>
+                <span className="text-sm font-medium">{c.name}</span>
               </CardContent>
             </Card>
           ))}
@@ -449,7 +496,7 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
               onClick={() => setLesson(l.id)}
             >
               <CardContent className="p-2">
-                <span className="text-sm font-medium">{l.title}</span>
+                <span className="text-sm font-medium">{l.name}</span>
               </CardContent>
             </Card>
           ))}
@@ -519,11 +566,11 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
       </>
     );
   }
-  // Step 7: Nhập câu hỏi
+  // Step 7: Nhập câu hỏi và lời giải (gộp)
   else if (step === 7 && questionType === 'manual') {
     content = (
       <>
-        <div className="text-2xl font-semibold text-center mb-6">{t('enter_question')}</div>
+        <div className="text-2xl font-semibold text-center mb-6">{t('enter_question_and_solution')}</div>
         <form className="space-y-6 max-w-2xl mx-auto">
           <div>
             <label className="block font-semibold mb-2">{t('question')}</label>
@@ -550,26 +597,6 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
               placeholder={t('enter_question_source')}
             />
           </div>
-        </form>
-        <div className="flex justify-between mt-8">
-          <Button onClick={() => setStep(6)} className="bg-blue-500 hover:bg-blue-600">{t('back')}</Button>
-          <Button
-            onClick={() => setStep(8)}
-            disabled={!manualQuestion.trim() || !manualQuestionSource.trim()}
-            className="bg-blue-500 hover:bg-blue-600"
-          >
-            {t('accept')}
-          </Button>
-        </div>
-      </>
-    );
-  }
-  // Step 8: Nhập lời giải
-  else if (step === 8 && questionType === 'manual') {
-    content = (
-      <>
-        <div className="text-2xl font-semibold text-center mb-6">{t('enter_solution')}</div>
-        <form className="space-y-6 max-w-2xl mx-auto">
           <div>
             <label className="block font-semibold mb-2">{t('solution')}</label>
             <div className="flex items-center gap-2 mb-1">
@@ -604,10 +631,15 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
           </div>
         </form>
         <div className="flex justify-between mt-8">
-          <Button onClick={() => setStep(7)} className="bg-blue-500 hover:bg-blue-600">{t('back')}</Button>
+          <Button onClick={() => setStep(6)} className="bg-blue-500 hover:bg-blue-600">{t('back')}</Button>
           <Button
-            onClick={() => setStep(9)}
-            disabled={!manualSolution.trim() || !manualExplanation.trim()}
+            onClick={() => setStep(8)}
+            disabled={
+              !manualQuestion.trim() ||
+              !manualQuestionSource.trim() ||
+              !manualSolution.trim() ||
+              !manualExplanation.trim()
+            }
             className="bg-blue-500 hover:bg-blue-600"
           >
             {t('accept')}
@@ -616,8 +648,8 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
       </>
     );
   }
-  // Step 9: Thông tin câu hỏi và lời giải
-  else if (step === 9 && questionType === 'manual') {
+  // Step 8: Thông tin câu hỏi và lời giải (review)
+  else if (step === 8 && questionType === 'manual') {
     const lessonObj = lessons.find(l => l.id === lesson);
     const lessonName = lessonObj ? lessonObj.title : t('no_lesson');
     const difficultyLabel = difficultyLevels[difficulty] || '';
@@ -649,7 +681,7 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
           </div>
         </div>
         <div className="flex justify-between mt-8">
-          <Button onClick={() => setStep(8)} className="bg-blue-500 hover:bg-blue-600">{t('back')}</Button>
+          <Button onClick={() => setStep(7)} className="bg-blue-500 hover:bg-blue-600">{t('back')}</Button>
           <Button
             onClick={() => setShowConfirmModal(true)}
             className="bg-blue-500 hover:bg-blue-600"
