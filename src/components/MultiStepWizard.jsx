@@ -1,4 +1,4 @@
-import React, { useState,useRef, useEffect } from 'react';
+import React, { useState,useRef, useEffect, useContext } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Stepper, Step } from '@/components/ui/stepper';
@@ -27,6 +27,9 @@ import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { Upload } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import ocrService from '@/config/OCRService';
+import OCRResultDisplay from './OCRResultDisplay';
+import { AuthContext } from '@/context/AuthContext';
 
 
 const stepsQuestion = [
@@ -96,6 +99,7 @@ const questionCreateTypes = [
 
 const MultiStepWizard = ({ onComplete, type, onBack }) => {
   const { t } = useTranslation();
+  const { user } = useContext(AuthContext);
   // --- State động ---
   const [gradeLevels, setGradeLevels] = useState(mockGradeLevels);
   const [semesters, setSemesters] = useState(mockSemesters);
@@ -151,6 +155,18 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
   const inputRef = useRef();
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [textResult, setTextResult] = useState('');
+  const [isProcessingOCR, setIsProcessingOCR] = useState(false);
+  const [ocrResult, setOcrResult] = useState(null);
+  const [ocrError, setOcrError] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleApplyToField = (fieldType, text) => {
+    if (fieldType === 'question') {
+      setManualQuestion(text);
+    } else if (fieldType === 'solution') {
+      setManualSolution(text);
+    }
+  };
 
   function handleDrop(e) {
     e.preventDefault();
@@ -178,13 +194,52 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
   }
 
   const handleImage = async (file) => {
-
+    try {
+      setIsProcessingOCR(true);
+      setOcrError(null);
+      setOcrResult(null);
+      
+      console.log('🖼️ Starting OCR processing for file:', file.name);
+      
+      // Sử dụng advanced OCR processing
+      const result = await ocrService.processImageAdvanced(file);
+      
+      if (result.success) {
+        console.log('✅ OCR completed successfully:', result);
+        setOcrResult(result);
+        
+        // Phân tích nội dung
+        const analysis = ocrService.analyzeContent(result.text);
+        console.log('📊 Content analysis:', analysis);
+        
+        // Tự động điền vào các trường nếu có thể
+        if (analysis.isMath) {
+          // Nếu là công thức toán học, điền vào solution
+          setManualSolution(result.text);
+        } else {
+          // Nếu là text thường, điền vào question
+          setManualQuestion(result.text);
+        }
+        
+        setTextResult(result.text);
+      } else {
+        console.error('❌ OCR failed:', result.error);
+        setOcrError(result.error);
+      }
+    } catch (error) {
+      console.error('❌ Error during OCR processing:', error);
+      setOcrError(error.message);
+    } finally {
+      setIsProcessingOCR(false);
+    }
   };
   
   function handleRemove() {
     setAiImage(null);
     if (inputRef.current) inputRef.current.value = '';
     setTextResult('');
+    setOcrResult(null);
+    setOcrError(null);
   }
 
   const handleSelectQuestion = (id) => {
@@ -196,6 +251,13 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
   React.useEffect(()=>{
     console.log("Cái question sao không lưu được",manualQuestion);
   },[manualQuestion])
+
+  // Cleanup OCR service when component unmounts
+  React.useEffect(() => {
+    return () => {
+      ocrService.terminate();
+    };
+  }, []);
 
   // --- API: Lấy gradeLevels khi mount ---
   React.useEffect(() => {
@@ -363,6 +425,41 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
     { label: t('questions') },
     { label: t('difficulty_level') },
   ];
+
+  // Hàm gửi question và solution
+  const handleCreateQuestionAndSolution = async () => {
+    console.log("Lesson để nộp",lesson);
+    try {
+      // Chuẩn bị dữ liệu question
+      const questionPayload = {
+        content: manualQuestion,
+        questionSource: manualQuestionSource,
+        difficultyLevel: difficultyLevels[difficulty],
+        lessonId: lesson,
+        createdByUserId: user?.id,
+      };
+      console.log('POST /api/questions payload:', questionPayload);
+      const questionRes = await api.post('/questions', questionPayload);
+      console.log('POST /api/questions response:', questionRes.data);
+      const questionId = questionRes.data?.question?.id;
+      if (!questionId) throw new Error('Không lấy được questionId từ response');
+
+      // Chuẩn bị dữ liệu solution
+      const solutionPayload = {
+        questionId,
+        content: manualSolution,
+        explanation: manualExplanation,
+        createdByUserId: user?.id,
+      };
+      console.log('POST /api/solutions payload:', solutionPayload);
+      const solutionRes = await api.post('/solutions', solutionPayload);
+      console.log('POST /api/solutions response:', solutionRes.data);
+      return { question: questionRes.data, solution: solutionRes.data };
+    } catch (error) {
+      console.error('Error in handleCreateQuestionAndSolution:', error);
+      throw error;
+    }
+  };
 
   // Render step content
   let content = null;
@@ -651,7 +748,7 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
   // Step 8: Thông tin câu hỏi và lời giải (review)
   else if (step === 8 && questionType === 'manual') {
     const lessonObj = lessons.find(l => l.id === lesson);
-    const lessonName = lessonObj ? lessonObj.title : t('no_lesson');
+    const lessonName = lessonObj ? lessonObj.name : t('no_lesson');
     const difficultyLabel = difficultyLevels[difficulty] || '';
     content = (
       <>
@@ -698,8 +795,25 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
             <div className="mb-4 text-center text-lg font-semibold">Are you sure you want to submit this information?</div>
             <div className="mb-4 text-center text-sm text-gray-500">Once sent, it may not be editable.</div>
             <div className="flex justify-center gap-4 mt-6">
-              <Button onClick={() => { setShowConfirmModal(false); setStep(10); }} className="bg-green-500 hover:bg-green-600">Confirm</Button>
-              <Button onClick={() => setShowConfirmModal(false)} className="bg-red-500 hover:bg-red-600">Back</Button>
+              <Button
+                onClick={async () => {
+                  setIsSubmitting(true);
+                  try {
+                    await handleCreateQuestionAndSolution();
+                    setShowConfirmModal(false);
+                    setStep(10);
+                  } catch (e) {
+                    // Có thể show toast lỗi ở đây
+                  } finally {
+                    setIsSubmitting(false);
+                  }
+                }}
+                className="bg-green-500 hover:bg-green-600"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Submitting...' : 'Confirm'}
+              </Button>
+              <Button onClick={() => setShowConfirmModal(false)} className="bg-red-500 hover:bg-red-600" disabled={isSubmitting}>Back</Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -710,50 +824,72 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
   else if (step === 7 && questionType === 'ai') {
     content = (
       <div className="flex flex-col items-center justify-center min-h-[420px]">
-        <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-xl">
+        <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-2xl">
           <h2 className="text-2xl font-bold mb-1">{t('upload_files')}</h2>
           <p className="text-gray-500 mb-6">{t('drag_and_drop_your_files_here_or_click_to_browse')}</p>
-          <div
-            className={clsx(
-              'flex flex-col items-center justify-center border-2 border-dashed rounded-xl transition cursor-pointer',
-              dragActive ? 'border-blue-500 bg-blue-50' : 'border-slate-300 bg-white',
-              'min-h-[220px] w-full py-8 mb-4'
-            )}
-            onDrop={handleDrop}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onClick={() => inputRef.current && inputRef.current.click()}
-            style={{ outline: dragActive ? '2px solid #3b82f6' : 'none' }}
-          >
-            <input
-              ref={inputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleFileChange}
-            />
-            {!aiImage ? (
-              <>
-                <div className="flex flex-col items-center justify-center mb-2">
-                  <div className="rounded-full bg-gray-100 p-3 mb-2">
-                    <Upload className="w-8 h-8 text-gray-400" />
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Upload Area */}
+            <div>
+              <div
+                className={clsx(
+                  'flex flex-col items-center justify-center border-2 border-dashed rounded-xl transition cursor-pointer',
+                  dragActive ? 'border-blue-500 bg-blue-50' : 'border-slate-300 bg-white',
+                  'min-h-[320px] w-full max-w-lg py-12 px-6 mb-4'
+                )}
+                onDrop={handleDrop}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onClick={() => inputRef.current && inputRef.current.click()}
+                style={{ outline: dragActive ? '2px solid #3b82f6' : 'none' }}
+              >
+                <input
+                  ref={inputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
+                {!aiImage ? (
+                  <>
+                    <div className="flex flex-col items-center justify-center mb-2">
+                      <div className="rounded-full bg-gray-100 p-3 mb-2">
+                        <Upload className="w-8 h-8 text-gray-400" />
+                      </div>
+                      <span className="text-base text-gray-600 font-medium">{t('drag_n_drop_files_here_or_click_to_select_files')}</span>
+                      <span className="text-xs text-gray-400 mt-1">{t('you_can_upload_1_image_file_up_to_8_mb')}</span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex flex-col items-center gap-2">
+                    <img src={URL.createObjectURL(aiImage)} alt="Preview" className="max-h-64 max-w-full rounded shadow" style={{ objectFit: 'contain' }} />
+                    <Button variant="outline" size="lg" className="text-base px-6 py-2" onClick={e => { e.stopPropagation(); handleRemove(); }}>{t('remove_image')}</Button>
                   </div>
-                  <span className="text-base text-gray-600 font-medium">{t('drag_n_drop_files_here_or_click_to_select_files')}</span>
-                  <span className="text-xs text-gray-400 mt-1">{t('you_can_upload_1_image_file_up_to_8_mb')}</span>
-                </div>
-              </>
-            ) : (
-              <div className="flex flex-col items-center gap-2">
-                <img src={URL.createObjectURL(aiImage)} alt="Preview" className="max-h-48 rounded shadow" />
-                <Button variant="outline" size="sm" onClick={e => { e.stopPropagation(); handleRemove(); }}>{t('remove_image')}</Button>
+                )}
               </div>
-            )}
+            </div>
+
+            {/* OCR Results */}
+            <OCRResultDisplay
+              result={ocrResult}
+              error={ocrError}
+              isProcessing={isProcessingOCR}
+              onApplyToField={handleApplyToField}
+            />
           </div>
+
           <div className="flex justify-between mt-8">
             <Button onClick={() => setStep(6)} className="bg-blue-500 hover:bg-blue-600">{t('back')}</Button>
-            <Button onClick={() => setShowConfirmModal(true)} disabled={!aiImage} className="bg-blue-500 hover:bg-blue-600">{t('send')}</Button>
+            <Button 
+              onClick={() => setShowConfirmModal(true)} 
+              disabled={!aiImage || isProcessingOCR} 
+              className="bg-blue-500 hover:bg-blue-600"
+            >
+              {isProcessingOCR ? 'Processing...' : t('send')}
+            </Button>
           </div>
         </div>
+        
         {/* Modal xác nhận gửi */}
         <Dialog open={showConfirmModal} onOpenChange={setShowConfirmModal}>
           <DialogContent className="max-w-md mx-auto">

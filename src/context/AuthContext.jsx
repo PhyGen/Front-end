@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { jwtDecode } from 'jwt-decode';
 
 const AuthContext = createContext();
+export { AuthContext };
 
 export const useAuth = () => {
   return useContext(AuthContext);
