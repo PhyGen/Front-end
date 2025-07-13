@@ -232,92 +232,95 @@ const ModLesson = () => {
                 </tr>
               </thead>
               <tbody>
-                {lessons.map(l => (
-                  editId === l.id ? (
-                    <tr key={l.id} className="bg-yellow-50">
-                      <td className="px-4 py-2 border font-semibold">{editRow.id}</td>
+                {lessons
+                  .slice() // copy mảng để không ảnh hưởng state
+                  .sort((a, b) => a.id - b.id)
+                  .map(l => (
+                    editId === l.id ? (
+                      <tr key={l.id} className="bg-yellow-50">
+                        <td className="px-4 py-2 border font-semibold">{editRow.id}</td>
+                        <td className="px-4 py-2 border">
+                          <Input value={editRow.name} onChange={e => setEditRow(r => ({ ...r, name: e.target.value }))} placeholder="Nhập tên bài" />
+                        </td>
+                        <td className="px-4 py-2 border">
+                          <Select value={editRow.chapterId} onValueChange={v => setEditRow(r => ({ ...r, chapterId: v }))}>
+                            <SelectTrigger className="w-32"><SelectValue placeholder="Chọn chương" /></SelectTrigger>
+                            <SelectContent>
+                              {chapters.map(c => (
+                                <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </td>
+                        <td className="px-4 py-2 border">{formatDate(l.createdAt)}</td>
+                        <td className="px-4 py-2 border">{formatDate(l.updatedAt)}</td>
+                        <td className="px-4 py-2 border flex gap-2">
+                          <Button size="sm" className="bg-blue-500 hover:bg-blue-600 text-white" onClick={handleEditSave} disabled={!editRow.name.trim() || !editRow.chapterId}>Save</Button>
+                          <Button size="sm" className="bg-gray-400 hover:bg-gray-500 text-white" onClick={() => setEditId(null)}>Cancel</Button>
+                        </td>
+                      </tr>
+                    ) : (
+                      <tr key={l.id} className="even:bg-slate-50">
+                        <td className="px-4 py-2 border">{l.id}</td>
+                        <td className="px-4 py-2 border">{l.name}</td>
+                        <td className="px-4 py-2 border">{chapters.find(c => c.id === l.chapterId)?.name || l.chapterId}</td>
+                        <td className="px-4 py-2 border">{formatDate(l.createdAt)}</td>
+                        <td className="px-4 py-2 border">{formatDate(l.updatedAt)}</td>
+                        <td className="px-4 py-2 border flex gap-2">
+                          <Button size="sm" className="bg-blue-500 hover:bg-blue-600 text-white" onClick={() => handleEdit(l.id)}>Edit</Button>
+                          <Button size="sm" className="bg-red-500 hover:bg-red-600 text-white" onClick={() => handleDelete(l.id)}>Delete</Button>
+                        </td>
+                      </tr>
+                    )
+                  ))}
+                  {adding && (
+                    <tr className="bg-yellow-50">
+                      <td className="px-4 py-2 border font-semibold">{newRow.id}</td>
                       <td className="px-4 py-2 border">
-                        <Input value={editRow.name} onChange={e => setEditRow(r => ({ ...r, name: e.target.value }))} placeholder="Nhập tên bài" />
+                        <Input value={newRow.name} onChange={e => setNewRow(r => ({ ...r, name: e.target.value }))} placeholder="Nhập tên bài" />
                       </td>
                       <td className="px-4 py-2 border">
-                        <Select value={editRow.chapterId} onValueChange={v => setEditRow(r => ({ ...r, chapterId: v }))}>
+                        <Select value={newRow.chapterId} onValueChange={v => setNewRow(r => ({ ...r, chapterId: v }))}>
                           <SelectTrigger className="w-32"><SelectValue placeholder="Chọn chương" /></SelectTrigger>
                           <SelectContent>
-                            {chapters.map(c => (
-                              <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>
-                            ))}
+                            {chapters.map(c => <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>)}
                           </SelectContent>
                         </Select>
                       </td>
-                      <td className="px-4 py-2 border">{formatDate(l.createdAt)}</td>
-                      <td className="px-4 py-2 border">{formatDate(l.updatedAt)}</td>
+                      <td className="px-4 py-2 border text-slate-400">-</td>
+                      <td className="px-4 py-2 border text-slate-400">-</td>
                       <td className="px-4 py-2 border flex gap-2">
-                        <Button size="sm" className="bg-blue-500 hover:bg-blue-600 text-white" onClick={handleEditSave} disabled={!editRow.name.trim() || !editRow.chapterId}>Save</Button>
-                        <Button size="sm" className="bg-gray-400 hover:bg-gray-500 text-white" onClick={() => setEditId(null)}>Cancel</Button>
+                        <Button size="sm" className="bg-blue-500 hover:bg-blue-600 text-white" onClick={handleCreate} disabled={!newRow.name.trim() || !newRow.chapterId}>Create</Button>
+                        <Button size="sm" className="bg-gray-400 hover:bg-gray-500 text-white" onClick={handleCancel}>Cancel</Button>
                       </td>
                     </tr>
-                  ) : (
-                    <tr key={l.id} className="even:bg-slate-50">
-                      <td className="px-4 py-2 border">{l.id}</td>
-                      <td className="px-4 py-2 border">{l.name}</td>
-                      <td className="px-4 py-2 border">{chapters.find(c => c.id === l.chapterId)?.name || l.chapterId}</td>
-                      <td className="px-4 py-2 border">{formatDate(l.createdAt)}</td>
-                      <td className="px-4 py-2 border">{formatDate(l.updatedAt)}</td>
-                      <td className="px-4 py-2 border flex gap-2">
-                        <Button size="sm" className="bg-blue-500 hover:bg-blue-600 text-white" onClick={() => handleEdit(l.id)}>Edit</Button>
-                        <Button size="sm" className="bg-red-500 hover:bg-red-600 text-white" onClick={() => handleDelete(l.id)}>Delete</Button>
-                      </td>
-                    </tr>
-                  )
-                ))}
-                {adding && (
-                  <tr className="bg-yellow-50">
-                    <td className="px-4 py-2 border font-semibold">{newRow.id}</td>
-                    <td className="px-4 py-2 border">
-                      <Input value={newRow.name} onChange={e => setNewRow(r => ({ ...r, name: e.target.value }))} placeholder="Nhập tên bài" />
-                    </td>
-                    <td className="px-4 py-2 border">
-                      <Select value={newRow.chapterId} onValueChange={v => setNewRow(r => ({ ...r, chapterId: v }))}>
-                        <SelectTrigger className="w-32"><SelectValue placeholder="Chọn chương" /></SelectTrigger>
-                        <SelectContent>
-                          {chapters.map(c => <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </td>
-                    <td className="px-4 py-2 border text-slate-400">-</td>
-                    <td className="px-4 py-2 border text-slate-400">-</td>
-                    <td className="px-4 py-2 border flex gap-2">
-                      <Button size="sm" className="bg-blue-500 hover:bg-blue-600 text-white" onClick={handleCreate} disabled={!newRow.name.trim() || !newRow.chapterId}>Create</Button>
-                      <Button size="sm" className="bg-gray-400 hover:bg-gray-500 text-white" onClick={handleCancel}>Cancel</Button>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          )}
-        </div>
-        <div className="mt-4 flex justify-center">
-          <Pagination>
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious onClick={() => handlePageChange(Math.max(1, page - 1))} disabled={page === 1} />
-              </PaginationItem>
-              {[...Array(totalPages)].map((_, i) => (
-                <PaginationItem key={i}>
-                  <PaginationLink isActive={page === i + 1} onClick={() => handlePageChange(i + 1)}>
-                    {i + 1}
-                  </PaginationLink>
+                  )}
+                </tbody>
+              </table>
+            )}
+          </div>
+          <div className="mt-4 flex justify-center">
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious onClick={() => handlePageChange(Math.max(1, page - 1))} disabled={page === 1} />
                 </PaginationItem>
-              ))}
-              <PaginationItem>
-                <PaginationNext onClick={() => handlePageChange(Math.min(totalPages, page + 1))} disabled={page === totalPages} />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
+                {[...Array(totalPages)].map((_, i) => (
+                  <PaginationItem key={i}>
+                    <PaginationLink isActive={page === i + 1} onClick={() => handlePageChange(i + 1)}>
+                      {i + 1}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))}
+                <PaginationItem>
+                  <PaginationNext onClick={() => handlePageChange(Math.min(totalPages, page + 1))} disabled={page === totalPages} />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
 
-export default ModLesson; 
+  export default ModLesson; 

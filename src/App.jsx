@@ -11,6 +11,8 @@ import { useAuth } from './context/AuthContext';
 function AppRoutes() {
   const { user, loading } = useAuth();
 
+  console.log('AppRoutes rendering with user:', user, 'loading:', loading);
+
   if (loading) {
     return <div>Loading...</div>;
   }
@@ -21,6 +23,9 @@ function AppRoutes() {
     ...privateRoutes.map(route => route.path),
     '/', // Thêm path mặc định
   ];
+
+  console.log('Valid paths:', validPaths);
+  console.log('Private routes:', privateRoutes);
 
   return (
     <Routes>
@@ -52,6 +57,8 @@ function AppRoutes() {
       {privateRoutes.map((route, index) => {
         const Page = route.component;
         let Layout = DefaultLayout;
+
+        console.log('Processing private route:', route.path, 'component:', Page);
 
         if (route.layout) {
           Layout = route.layout;
