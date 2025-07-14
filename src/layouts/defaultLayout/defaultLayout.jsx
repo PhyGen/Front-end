@@ -5,6 +5,7 @@ import Sidebar from '../../components/Sidebar';
 import { useSidebar } from '../../context/SidebarContext';
 import Header from '../Header';
 import Footer from '../Footer';
+import PhyBotChatBox from '../../components/PhyBotChatBox';
 
 const DefaultLayout = ({ children }) => {
     const { selectedKey, setSelectedKey } = useSidebar();
@@ -21,6 +22,7 @@ const DefaultLayout = ({ children }) => {
                 </main>
             </div>
             <Footer/>
+            <PhyBotChatBox />
         </div>
     );
 };
