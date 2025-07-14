@@ -30,6 +30,7 @@ import { useTranslation } from 'react-i18next';
 import ocrService from '@/config/OCRService';
 import OCRResultDisplay from './OCRResultDisplay';
 import { AuthContext } from '@/context/AuthContext';
+import * as RadixDialog from '@radix-ui/react-dialog';
 
 
 const stepsQuestion = [
@@ -46,7 +47,6 @@ const stepsExam = [
   { label: 'Semester' },
   { label: 'Type' },
   { label: 'Questions' },
-  { label: 'Difficulty level' },
 ];
 
 // --- MOCK DATA (giữ lại để fallback khi API lỗi/null) ---
@@ -87,9 +87,8 @@ const mockQuestionList = [
 const difficultyLevels = ['Easy','Medium','Hard'];
 
 const examTypes = [
-  { id: 1, label: 'Quiz', icon: quiz },
-  { id: 2, label: 'Midterm', icon: exam45M },
-  { id: 3, label: 'Final', icon: semesterExam },
+  { id: 1, name: 'One-Period Exam' },
+  { id: 2, name: 'Semester Exam' },
 ];
 
 const questionCreateTypes = [
@@ -159,6 +158,65 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
   const [ocrResult, setOcrResult] = useState(null);
   const [ocrError, setOcrError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // State cho flow exam
+  const [examType, setExamType] = useState(null);
+  const [selectedExamQuestions, setSelectedExamQuestions] = useState([]);
+  const [filterExamTextbook, setFilterExamTextbook] = useState(null);
+  const [filterExamChapter, setFilterExamChapter] = useState(null);
+  const [filterExamLesson, setFilterExamLesson] = useState(null);
+  const [filterExamDifficulty, setFilterExamDifficulty] = useState(null);
+  const [examQuestionsList, setExamQuestionsList] = useState([]);
+  const [examReviewSolutions, setExamReviewSolutions] = useState({}); // { [questionId]: {solution, explanation} }
+
+  // --- State riêng cho modal Search Question ---
+  const [modalChapters, setModalChapters] = useState([]);
+  const [modalLessons, setModalLessons] = useState([]);
+
+  // Khi chọn filterExamChapter, gọi API lấy lessons cho modal
+  useEffect(() => {
+    if (!filterExamChapter) {
+      setModalLessons([]);
+      setFilterExamLesson(null);
+      return;
+    }
+    (async () => {
+      try {
+        const res = await api.get(`/lessons?chapterId=${filterExamChapter}`);
+        if (res.data && Array.isArray(res.data.items)) {
+          setModalLessons(res.data.items);
+        } else {
+          setModalLessons([]);
+        }
+      } catch (error) {
+        setModalLessons([]);
+      }
+    })();
+    setFilterExamLesson(null);
+  }, [filterExamChapter]);
+
+  // Khi chọn semester, gọi API lấy chapters cho modal
+  useEffect(() => {
+    if (!semester) {
+      setModalChapters([]);
+      setFilterExamChapter(null);
+      setModalLessons([]);
+      setFilterExamLesson(null);
+      return;
+    }
+    (async () => {
+      try {
+        const res = await api.get('/chapters');
+        let filtered = res.data.filter(c => c.semesterId === semester);
+        setModalChapters(filtered);
+      } catch (error) {
+        setModalChapters([]);
+      }
+    })();
+    setFilterExamChapter(null);
+    setModalLessons([]);
+    setFilterExamLesson(null);
+  }, [semester]);
 
   const handleApplyToField = (fieldType, text) => {
     if (fieldType === 'question') {
@@ -384,7 +442,7 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
         setLessons(mockLessons.filter(l => l.chapterId === chapter));
       }
     })();
-    setLesson(null); setQuestionList([]);
+    setQuestionList([]);
   }, [chapter]);
 
   // --- API: Lấy questionList khi chọn lesson ---
@@ -423,7 +481,7 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
     { label: t('semester') },
     { label: t('type') },
     { label: t('questions') },
-    { label: t('difficulty_level') },
+    { label: t('review_exam') },
   ];
 
   // Hàm gửi question và solution
@@ -461,10 +519,274 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
     }
   };
 
+  // Thêm hàm fetchSearchQuestionDialog
+  const fetchSearchQuestionDialog = async () => {
+    const params = {};
+    if (filterExamLesson) params.lessonId = filterExamLesson;
+    if (filterExamChapter) params.chapterId = filterExamChapter;
+    if (filterExamDifficulty !== null && filterExamDifficulty.length > 0) {
+      params.difficultyLevel = filterExamDifficulty.map(idx => difficultyLevels[idx]).join(',');
+    }
+    // Nếu có input search, thêm: params.search = searchValue;
+    try {
+      const res = await api.get('/questions', { params });
+      setExamQuestionsList(res.data.items || []);
+    } catch (error) {
+      setExamQuestionsList([]);
+    }
+  };
+
   // Render step content
   let content = null;
+  if (type === 'exam') {
+    // Step 0: Grade Level
   if (step === 0) {
-    // Grade Level
+      content = (
+        <>
+          <div className="text-2xl font-semibold text-center mb-6">Chọn khối lớp cho bài kiểm tra</div>
+          <div className="flex gap-8 justify-center mb-8">
+            {gradeLevels.map((g) => (
+              <Card
+                key={g.value}
+                className={clsx(
+                  'w-48 h-64 flex items-center justify-center cursor-pointer border-2 transition',
+                  grade === g.value ? 'border-blue-500 shadow-lg' : 'border-slate-200 hover:border-blue-300'
+                )}
+                onClick={() => setGrade(g.value)}
+              >
+                <CardContent className="flex items-center justify-center h-full">
+                  <span className="text-6xl font-bold">{g.label || g.name}</span>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          <div className="flex justify-between">
+            <Button onClick={onBack} className="bg-blue-500 hover:bg-blue-600">Back</Button>
+            <Button onClick={() => setStep(1)} disabled={!grade} className="bg-blue-500 hover:bg-blue-600">Next</Button>
+          </div>
+        </>
+      );
+    }
+    // Step 1: Semester
+    else if (step === 1) {
+      content = (
+        <>
+          <div className="text-2xl font-semibold text-center mb-6">Chọn học kỳ cho bài kiểm tra</div>
+          <div className="flex gap-8 justify-center mb-8">
+            {semesters.map((s) => (
+              <Card
+                key={s.value}
+                className={clsx(
+                  'w-64 h-64 flex items-center justify-center cursor-pointer border-2 transition',
+                  semester === s.value ? 'border-blue-500 shadow-lg' : 'border-slate-200 hover:border-blue-300'
+                )}
+                onClick={() => setSemester(s.value)}
+              >
+                <CardContent className="flex items-center justify-center h-full">
+                  <span className="text-xl font-bold text-center leading-tight">{s.name || s.label}</span>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          <div className="flex justify-between">
+            <Button onClick={() => setStep(0)} className="bg-blue-500 hover:bg-blue-600">Back</Button>
+            <Button onClick={() => setStep(2)} disabled={!semester} className="bg-blue-500 hover:bg-blue-600">Next</Button>
+          </div>
+        </>
+      );
+    }
+    // Step 2: Type
+    else if (step === 2) {
+      content = (
+        <>
+          <div className="text-2xl font-semibold text-center mb-6">Chọn loại bài kiểm tra</div>
+          <div className="flex gap-8 justify-center mb-8">
+            {examTypes.map((et) => (
+              <Card
+                key={et.id}
+                className={clsx(
+                  'w-64 h-64 flex flex-col items-center justify-center cursor-pointer border-2 transition',
+                  examType === et.id ? 'border-blue-500 shadow-lg' : 'border-slate-200 hover:border-blue-300',
+                  'rounded-xl'
+                )}
+                onClick={() => setExamType(et.id)}
+              >
+                <CardContent className="flex flex-col items-center justify-center h-full w-full">
+                  <span className="text-xl font-bold text-center leading-tight">{et.name}</span>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          <div className="flex justify-between">
+            <Button onClick={() => setStep(1)} className="bg-blue-500 hover:bg-blue-600">Back</Button>
+            <Button onClick={() => setStep(3)} disabled={!examType} className="bg-blue-500 hover:bg-blue-600">Next</Button>
+          </div>
+        </>
+      );
+    }
+    // Step 3: Questions (bộ lọc và chọn câu hỏi)
+    else if (step === 3) {
+      content = (
+        <>
+          <div className="text-2xl font-semibold text-center mb-6">Chọn câu hỏi cho bài kiểm tra</div>
+          <div className="mb-4 flex justify-center">
+            <Button onClick={() => setSearchModalOpen(true)} className="bg-blue-500 hover:bg-blue-600">Search Question</Button>
+          </div>
+          <div className="mb-4">
+            <Label>Danh sách câu hỏi đã chọn:</Label>
+            <div className="max-h-64 overflow-y-auto border rounded p-2 bg-slate-50">
+              {selectedExamQuestions.length === 0 && <div className="text-gray-400 italic">Chưa chọn câu hỏi nào</div>}
+              {selectedExamQuestions.map(qid => {
+                const q = mockQuestionList.find(q => q.id === qid);
+                return (
+                  <div key={qid} className="flex items-center gap-2 border-b py-2 last:border-b-0">
+                    <span>{q?.name}</span>
+                    <Button size="sm" variant="outline" onClick={() => setSelectedExamQuestions(prev => prev.filter(id => id !== qid))}>Remove</Button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          <div className="flex justify-between mt-8">
+            <Button onClick={() => setStep(2)} className="bg-blue-500 hover:bg-blue-600">Back</Button>
+            <Button onClick={() => setStep(4)} disabled={selectedExamQuestions.length === 0} className="bg-blue-500 hover:bg-blue-600">Next</Button>
+          </div>
+
+          {/* Modal Search Question */}
+          <RadixDialog.Root open={searchModalOpen} onOpenChange={setSearchModalOpen}>
+  <RadixDialog.Portal>
+    <RadixDialog.Overlay className="fixed inset-0 bg-black/30 z-[9998]" />
+    <RadixDialog.Content className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+      <div className="max-w-2xl w-full bg-white shadow-lg p-6 rounded-xl relative focus:outline-none">
+        <RadixDialog.Title className="text-xl font-bold mb-4">Tìm kiếm câu hỏi</RadixDialog.Title>
+
+        <button
+          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl font-bold"
+          onClick={() => setSearchModalOpen(false)}
+          aria-label="Close"
+          type="button"
+        >
+          ×
+        </button>
+
+        <div className="mb-4 flex flex-col gap-4">
+          <div>
+            <Label>Textbook</Label>
+            <select className="border rounded p-2 w-full" value={filterExamTextbook || ''} onChange={e => setFilterExamTextbook(e.target.value)}>
+              <option value="">All</option>
+              {textbooks.map(tb => <option key={tb.id} value={tb.id}>{tb.name}</option>)}
+            </select>
+          </div>
+          <div>
+            <Label>Chapter</Label>
+            <select className="border rounded p-2 w-full" value={filterExamChapter || ''} onChange={e => setFilterExamChapter(e.target.value)}>
+              <option value="">All</option>
+              {modalChapters.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </div>
+          <div>
+            <Label>Lesson</Label>
+            <select className="border rounded p-2 w-full" value={filterExamLesson || ''} onChange={e => setFilterExamLesson(e.target.value)}>
+              <option value="">All</option>
+              {modalLessons.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+            </select>
+          </div>
+          <div>
+            <Label>Difficulty</Label>
+            <div className="flex gap-4 mt-2">
+              {difficultyLevels.map((d, idx) => (
+                <label key={d} className="flex items-center gap-1">
+                  <input
+                    type="radio"
+                    name="difficulty-radio"
+                    checked={Array.isArray(filterExamDifficulty) && filterExamDifficulty[0] === idx}
+                    onChange={e => {
+                      if (e.target.checked) {
+                        setFilterExamDifficulty([idx]);
+                      }
+                    }}
+                  />
+                  <span>{d}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="mb-4">
+          <Button onClick={fetchSearchQuestionDialog}>Tìm kiếm</Button>
+        </div>
+
+        <div className="mb-4">
+          <Label>Danh sách câu hỏi:</Label>
+          <div className="max-h-64 overflow-y-auto border rounded p-2 bg-slate-50">
+            {examQuestionsList.length === 0 && <div className="text-gray-400 italic">Không có câu hỏi nào</div>}
+            {examQuestionsList.map(q => (
+              <div key={q.id} className="flex items-center gap-2 border-b py-2 last:border-b-0">
+                <input
+                  type="checkbox"
+                  checked={selectedExamQuestions.includes(q.id)}
+                  onChange={e => {
+                    if (e.target.checked) setSelectedExamQuestions(prev => [...prev, q.id]);
+                    else setSelectedExamQuestions(prev => prev.filter(id => id !== q.id));
+                  }}
+                />
+                <span>{q.content}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-2 mt-4">
+          <Button variant="outline" onClick={() => setSearchModalOpen(false)}>Đóng</Button>
+          <Button onClick={() => setSearchModalOpen(false)} className="bg-blue-500 hover:bg-blue-600">Xác nhận</Button>
+        </div>
+      </div>
+    </RadixDialog.Content>
+  </RadixDialog.Portal>
+</RadixDialog.Root>
+
+        </>
+      );
+    }
+    // Step 4: Review
+    else if (step === 4) {
+      content = (
+        <>
+          <div className="text-2xl font-semibold text-center mb-6">Review Exam</div>
+          <div className="max-w-2xl mx-auto bg-slate-50 rounded-lg p-6 border mb-8">
+            {selectedExamQuestions.length === 0 && <div className="text-gray-400 italic">Chưa chọn câu hỏi nào</div>}
+            {selectedExamQuestions.map(qid => {
+              const q = mockQuestionList.find(q => q.id === qid);
+              // Giả lập solution/explanation
+              const solution = `Solution for question ${qid}`;
+              const explanation = `Explanation for question ${qid}`;
+              return (
+                <div key={qid} className="mb-6 border-b pb-4 last:border-b-0">
+                  <div className="font-bold mb-2">Câu hỏi: {q?.name}</div>
+                  <div className="mb-2">Nội dung: <span className="prose" dangerouslySetInnerHTML={{ __html: q?.content || '...' }} /></div>
+                  <div className="bg-green-50 p-3 rounded mb-2">
+                    <div className="font-semibold">Solution:</div>
+                    <div>{solution}</div>
+                  </div>
+                  <div className="bg-blue-50 p-3 rounded">
+                    <div className="font-semibold">Explanation:</div>
+                    <div>{explanation}</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div className="flex justify-between mt-8">
+            <Button onClick={() => setStep(3)} className="bg-blue-500 hover:bg-blue-600">Back</Button>
+            <Button onClick={() => setStep(10)} className="bg-green-500 hover:bg-green-600">Xác nhận tạo Exam</Button>
+          </div>
+        </>
+      );
+    }
+  } else {
+    // Toàn bộ flow question (tất cả các bước step === 0, 1, 2, ...)
+    if (step === 0) {
     content = (
       <>
         <div className="text-2xl font-semibold text-center mb-6">{t('select_grade_level_for_your', { type })}</div>
@@ -494,7 +816,6 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
       </>
     );
   } else if (step === 1) {
-    // Textbook
     content = (
       <>
         <div className="text-2xl font-semibold text-center mb-6">{t('select_textbook_for_your', { type })}</div>
@@ -523,7 +844,6 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
       </>
     );
   } else if (step === 2) {
-    // Semester
     content = (
       <>
         <div className="text-2xl font-semibold text-center mb-6">{t('select_semester_for_your', { type })}</div>
@@ -551,7 +871,6 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
       </>
     );
   } else if (step === 3) {
-    // Chapter
     content = (
       <>
         <div className="text-2xl font-semibold text-center mb-6">{t('select_chapter_for_your', { type })}</div>
@@ -578,7 +897,6 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
       </>
     );
   } else if (step === 4) {
-    // Lesson
     content = (
       <>
         <div className="text-2xl font-semibold text-center mb-6">{t('select_lesson_for_your', { type })}</div>
@@ -605,7 +923,6 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
       </>
     );
   } else if (step === 5) {
-    // Difficulty level
     content = (
       <>
         <div className="text-2xl font-semibold text-center mb-6">{t('select_difficulty_level_for_your', { type })}</div>
@@ -634,7 +951,6 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
       </>
     );
   } else if (step === 6) {
-    // Chọn loại tạo câu hỏi
     content = (
       <>
         <div className="text-2xl font-semibold text-center mb-6">{t('choose_question_creation_method')}</div>
@@ -748,7 +1064,7 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
   // Step 8: Thông tin câu hỏi và lời giải (review)
   else if (step === 8 && questionType === 'manual') {
     const lessonObj = lessons.find(l => l.id === lesson);
-    const lessonName = lessonObj ? lessonObj.name : t('no_lesson');
+      const lessonName = lessonObj ? lessonObj.name : t('no_lesson');
     const difficultyLabel = difficultyLevels[difficulty] || '';
     content = (
       <>
@@ -795,25 +1111,25 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
             <div className="mb-4 text-center text-lg font-semibold">Are you sure you want to submit this information?</div>
             <div className="mb-4 text-center text-sm text-gray-500">Once sent, it may not be editable.</div>
             <div className="flex justify-center gap-4 mt-6">
-              <Button
-                onClick={async () => {
-                  setIsSubmitting(true);
-                  try {
-                    await handleCreateQuestionAndSolution();
-                    setShowConfirmModal(false);
-                    setStep(10);
-                  } catch (e) {
-                    // Có thể show toast lỗi ở đây
-                  } finally {
-                    setIsSubmitting(false);
-                  }
-                }}
-                className="bg-green-500 hover:bg-green-600"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? 'Submitting...' : 'Confirm'}
-              </Button>
-              <Button onClick={() => setShowConfirmModal(false)} className="bg-red-500 hover:bg-red-600" disabled={isSubmitting}>Back</Button>
+                <Button
+                  onClick={async () => {
+                    setIsSubmitting(true);
+                    try {
+                      await handleCreateQuestionAndSolution();
+                      setShowConfirmModal(false);
+                      setStep(10);
+                    } catch (e) {
+                      // Có thể show toast lỗi ở đây
+                    } finally {
+                      setIsSubmitting(false);
+                    }
+                  }}
+                  className="bg-green-500 hover:bg-green-600"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Submitting...' : 'Confirm'}
+                </Button>
+                <Button onClick={() => setShowConfirmModal(false)} className="bg-red-500 hover:bg-red-600" disabled={isSubmitting}>Back</Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -824,72 +1140,72 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
   else if (step === 7 && questionType === 'ai') {
     content = (
       <div className="flex flex-col items-center justify-center min-h-[420px]">
-        <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-2xl">
+          <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-2xl">
           <h2 className="text-2xl font-bold mb-1">{t('upload_files')}</h2>
           <p className="text-gray-500 mb-6">{t('drag_and_drop_your_files_here_or_click_to_browse')}</p>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Upload Area */}
-            <div>
-              <div
-                className={clsx(
-                  'flex flex-col items-center justify-center border-2 border-dashed rounded-xl transition cursor-pointer',
-                  dragActive ? 'border-blue-500 bg-blue-50' : 'border-slate-300 bg-white',
-                  'min-h-[320px] w-full max-w-lg py-12 px-6 mb-4'
-                )}
-                onDrop={handleDrop}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onClick={() => inputRef.current && inputRef.current.click()}
-                style={{ outline: dragActive ? '2px solid #3b82f6' : 'none' }}
-              >
-                <input
-                  ref={inputRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleFileChange}
-                />
-                {!aiImage ? (
-                  <>
-                    <div className="flex flex-col items-center justify-center mb-2">
-                      <div className="rounded-full bg-gray-100 p-3 mb-2">
-                        <Upload className="w-8 h-8 text-gray-400" />
-                      </div>
-                      <span className="text-base text-gray-600 font-medium">{t('drag_n_drop_files_here_or_click_to_select_files')}</span>
-                      <span className="text-xs text-gray-400 mt-1">{t('you_can_upload_1_image_file_up_to_8_mb')}</span>
-                    </div>
-                  </>
-                ) : (
-                  <div className="flex flex-col items-center gap-2">
-                    <img src={URL.createObjectURL(aiImage)} alt="Preview" className="max-h-64 max-w-full rounded shadow" style={{ objectFit: 'contain' }} />
-                    <Button variant="outline" size="lg" className="text-base px-6 py-2" onClick={e => { e.stopPropagation(); handleRemove(); }}>{t('remove_image')}</Button>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* OCR Results */}
-            <OCRResultDisplay
-              result={ocrResult}
-              error={ocrError}
-              isProcessing={isProcessingOCR}
-              onApplyToField={handleApplyToField}
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Upload Area */}
+              <div>
+          <div
+            className={clsx(
+              'flex flex-col items-center justify-center border-2 border-dashed rounded-xl transition cursor-pointer',
+              dragActive ? 'border-blue-500 bg-blue-50' : 'border-slate-300 bg-white',
+                    'min-h-[320px] w-full max-w-lg py-12 px-6 mb-4'
+            )}
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onClick={() => inputRef.current && inputRef.current.click()}
+            style={{ outline: dragActive ? '2px solid #3b82f6' : 'none' }}
+          >
+            <input
+              ref={inputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleFileChange}
             />
+            {!aiImage ? (
+              <>
+                <div className="flex flex-col items-center justify-center mb-2">
+                  <div className="rounded-full bg-gray-100 p-3 mb-2">
+                    <Upload className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <span className="text-base text-gray-600 font-medium">{t('drag_n_drop_files_here_or_click_to_select_files')}</span>
+                  <span className="text-xs text-gray-400 mt-1">{t('you_can_upload_1_image_file_up_to_8_mb')}</span>
+                </div>
+              </>
+            ) : (
+              <div className="flex flex-col items-center gap-2">
+                      <img src={URL.createObjectURL(aiImage)} alt="Preview" className="max-h-64 max-w-full rounded shadow" style={{ objectFit: 'contain' }} />
+                      <Button variant="outline" size="lg" className="text-base px-6 py-2" onClick={e => { e.stopPropagation(); handleRemove(); }}>{t('remove_image')}</Button>
+              </div>
+            )}
           </div>
+              </div>
+
+              {/* OCR Results */}
+              <OCRResultDisplay
+                result={ocrResult}
+                error={ocrError}
+                isProcessing={isProcessingOCR}
+                onApplyToField={handleApplyToField}
+              />
+            </div>
 
           <div className="flex justify-between mt-8">
             <Button onClick={() => setStep(6)} className="bg-blue-500 hover:bg-blue-600">{t('back')}</Button>
-            <Button 
-              onClick={() => setShowConfirmModal(true)} 
-              disabled={!aiImage || isProcessingOCR} 
-              className="bg-blue-500 hover:bg-blue-600"
-            >
-              {isProcessingOCR ? 'Processing...' : t('send')}
-            </Button>
+              <Button 
+                onClick={() => setShowConfirmModal(true)} 
+                disabled={!aiImage || isProcessingOCR} 
+                className="bg-blue-500 hover:bg-blue-600"
+              >
+                {isProcessingOCR ? 'Processing...' : t('send')}
+              </Button>
           </div>
         </div>
-        
+          
         {/* Modal xác nhận gửi */}
         <Dialog open={showConfirmModal} onOpenChange={setShowConfirmModal}>
           <DialogContent className="max-w-md mx-auto">
@@ -944,6 +1260,7 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
         </div>
       </div>
     );
+    }
   }
 
   return (
