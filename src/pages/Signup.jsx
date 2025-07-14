@@ -110,7 +110,7 @@ const Signup = () => {
     try {
       setIsLoading(true);
       setError('');
-      
+
       console.log('Google login response:', response);
       
       // Gửi credential lên backend (backend mong đợi field 'credential')
