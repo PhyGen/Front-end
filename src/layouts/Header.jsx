@@ -10,12 +10,14 @@ import avatarIcon from '../assets/icons/avatar.jpg';
 import SettingsModal from '../components/SettingsModal';
 import { useTranslation } from 'react-i18next';
 import Navbar from '@/components/Navbar';
+import { useSidebar } from '../context/SidebarContext';
 
 const Header = () => {
   const navigate = useNavigate();
   const { setUser } = useAuth();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const { t } = useTranslation();
+  const { setSelectedKey } = useSidebar();
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -32,7 +34,7 @@ const Header = () => {
     <>
       <header className="flex items-center justify-between bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 p-4 shadow-sm border-b rounded-b-2xl">
         {/* Logo */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 cursor-pointer" onClick={() => setSelectedKey('home')}>
           <Avatar className="h-12 w-12">
             <AvatarImage src={phygenIcon} alt="PhyGen Logo" />
             <AvatarFallback>PG</AvatarFallback>

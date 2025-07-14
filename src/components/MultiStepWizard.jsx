@@ -168,6 +168,10 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
   const [filterExamDifficulty, setFilterExamDifficulty] = useState(null);
   const [examQuestionsList, setExamQuestionsList] = useState([]);
   const [examReviewSolutions, setExamReviewSolutions] = useState({}); // { [questionId]: {solution, explanation} }
+  const [solutions, setSolutions] = useState([]);
+  const [openIndexes, setOpenIndexes] = useState([]); // State cho accordion
+  const [examName, setExamName] = useState(''); // State cho tên bài kiểm tra
+  const [showExamNameInput, setShowExamNameInput] = useState(false); // State hiển thị input
 
   // --- State riêng cho modal Search Question ---
   const [modalChapters, setModalChapters] = useState([]);
@@ -536,6 +540,65 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
     }
   };
 
+    // Gọi API lấy solutions khi vào step 4
+    useEffect(() => {
+      if (step === 4) {
+        api.get('/solutions')
+          .then(res => setSolutions(res.data))
+          .catch(() => setSolutions([]));
+      }
+    }, [step]);
+
+  const toggleOpen = (idx) => {
+    setOpenIndexes((prev) =>
+      prev.includes(idx) ? prev.filter(i => i !== idx) : [...prev, idx]
+    );
+  };
+
+  // Hàm tạo exam và gán câu hỏi vào exam
+  const handleCreateExam = async () => {
+    setLesson(1);
+    if (!examName || !lesson || !examType || !user?.id || selectedExamQuestions.length === 0) {
+      console.log("Exam name",examName);
+      console.log("lesson",lesson);
+      console.log("Exam name",examType);
+      console.log("Exam name",user?.id);
+      console.log("Độ dài bài kiểm tra có bằng 0 hay không",selectedExamQuestions.length === 0);
+      throw new Error('Thiếu thông tin để tạo bài kiểm tra');
+    }
+    // Lấy id examType
+    const examTypeObj = examTypes.find(e => e.id === examType);
+    if (!examTypeObj) throw new Error('Không tìm thấy examType');
+    try {
+      // 1. Tạo exam
+      const examPayload = {
+        name: examName,
+        lessonId: lesson,
+        examTypeId: examTypeObj.id,
+        createdByUserId: user.id,
+      };
+      const examRes = await api.post('/exams', examPayload);
+      const examId = examRes.data?.id || examRes.data?.examId || examRes.data?.exam?.id;
+      if (!examId) throw new Error('Không lấy được examId từ response');
+      // 2. Gán câu hỏi vào exam
+      const assignResults = [];
+      for (let i = 0; i < selectedExamQuestions.length; i++) {
+        const questionId = selectedExamQuestions[i];
+        const assignPayload = {
+          examId,
+          questionId,
+          order: i + 1,
+        };
+        const assignRes = await api.post('/exams/questions', assignPayload);
+        assignResults.push(assignRes.data);
+      }
+      return { exam: examRes.data, assignedQuestions: assignResults };
+    } catch (error) {
+      console.error('Error in handleCreateExam:', error);
+      throw error;
+    }
+  };
+
   // Render step content
   let content = null;
   if (type === 'exam') {
@@ -637,11 +700,11 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
             <div className="max-h-64 overflow-y-auto border rounded p-2 bg-slate-50">
               {selectedExamQuestions.length === 0 && <div className="text-gray-400 italic">Chưa chọn câu hỏi nào</div>}
               {selectedExamQuestions.map(qid => {
-                const q = mockQuestionList.find(q => q.id === qid);
+                const question = examQuestionsList.find(q => q.id === qid);
                 return (
                   <div key={qid} className="flex items-center gap-2 border-b py-2 last:border-b-0">
-                    <span>{q?.name}</span>
-                    <Button size="sm" variant="outline" onClick={() => setSelectedExamQuestions(prev => prev.filter(id => id !== qid))}>Remove</Button>
+                    <span>{question?.content}</span>
+                    <Button size="sm" variant="outline" className="bg-red-600 text-white  hover:bg-red-700 hover:text-white" onClick={() => setSelectedExamQuestions(prev => prev.filter(id => id !== qid))}>Remove</Button>
                   </div>
                 );
               })}
@@ -753,34 +816,110 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
     else if (step === 4) {
       content = (
         <>
-          <div className="text-2xl font-semibold text-center mb-6">Review Exam</div>
-          <div className="max-w-2xl mx-auto bg-slate-50 rounded-lg p-6 border mb-8">
+          <div className="text-2xl font-semibold text-center mb-6 ">
+            {examName ? (
+              <span>{examName}</span>
+            ) : (
+              <span className="italic text-gray-400">(Chưa đặt tên bài kiểm tra)</span>
+            )}
+          </div>
+          <div className="max-w-2xl mx-auto bg-slate-50 rounded-lg p-6 border mb-8 ">
+             {selectedExamQuestions.length > 0 && (
+               <div className="flex justify-between mb-4">
+                 <Button size="sm" variant="outline" onClick={() => setOpenIndexes([])}>
+                   Đóng tất cả
+                 </Button>
+                 <Button size="sm" variant="outline" onClick={() => setShowExamNameInput(true)}>
+                   Đặt tên bài kiểm tra
+                 </Button>
+               </div>
+             )}
+             {/* Input đặt tên bài kiểm tra */}
+             {showExamNameInput && (
+               <div className="flex items-center gap-2 mb-4">
+                 <input
+                   type="text"
+                   className="border rounded px-2 py-1 flex-1"
+                   placeholder="Nhập tên bài kiểm tra..."
+                   value={examName}
+                   onChange={e => setExamName(e.target.value)}
+                   autoFocus
+                 />
+                 <Button size="sm" onClick={() => setShowExamNameInput(false)}>
+                   Lưu
+                 </Button>
+                 <Button size="sm" variant="outline" onClick={() => setShowExamNameInput(false)}>
+                   Hủy
+                 </Button>
+               </div>
+             )}
             {selectedExamQuestions.length === 0 && <div className="text-gray-400 italic">Chưa chọn câu hỏi nào</div>}
-            {selectedExamQuestions.map(qid => {
-              const q = mockQuestionList.find(q => q.id === qid);
-              // Giả lập solution/explanation
-              const solution = `Solution for question ${qid}`;
-              const explanation = `Explanation for question ${qid}`;
+            {selectedExamQuestions.map((qid, index) => {
+              const q = examQuestionsList.find(q => q.id === qid);
+              const solutionObj = solutions.find(s => s.questionId === qid);
+              const isOpen = openIndexes.includes(index);
               return (
-                <div key={qid} className="mb-6 border-b pb-4 last:border-b-0">
-                  <div className="font-bold mb-2">Câu hỏi: {q?.name}</div>
-                  <div className="mb-2">Nội dung: <span className="prose" dangerouslySetInnerHTML={{ __html: q?.content || '...' }} /></div>
-                  <div className="bg-green-50 p-3 rounded mb-2">
-                    <div className="font-semibold">Solution:</div>
-                    <div>{solution}</div>
+                <div key={qid} className="mb-2 border-b pb-2 last:border-b-0">
+                  <div
+                    className="flex items-center cursor-pointer select-none"
+                    onClick={() => toggleOpen(index)}
+                  >
+                    <div className="font-bold mr-2">Câu hỏi {index + 1}</div>
+                    <span className="text-blue-500">{isOpen ? "▲" : "▼"}</span>
+                    <span className="ml-2">{q?.content?.slice(0, 40)}...</span>
                   </div>
-                  <div className="bg-blue-50 p-3 rounded">
-                    <div className="font-semibold">Explanation:</div>
-                    <div>{explanation}</div>
-                  </div>
+                  {isOpen && (
+                    <div className="pl-4 mt-2">
+                      <div className="mb-2">Nội dung: <span className="prose" dangerouslySetInnerHTML={{ __html: q?.content || '...' }} /></div>
+                      <div className="bg-green-50 p-3 rounded mb-2">
+                        <div className="font-semibold">Solution:</div>
+                        <div>{solutionObj?.content || <span className="italic text-gray-400">Chưa có lời giải</span>}</div>
+                      </div>
+                      <div className="bg-blue-50 p-3 rounded">
+                        <div className="font-semibold">Explanation:</div>
+                        <div>{solutionObj?.explanation || <span className="italic text-gray-400">Chưa có giải thích</span>}</div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}
           </div>
           <div className="flex justify-between mt-8">
             <Button onClick={() => setStep(3)} className="bg-blue-500 hover:bg-blue-600">Back</Button>
-            <Button onClick={() => setStep(10)} className="bg-green-500 hover:bg-green-600">Xác nhận tạo Exam</Button>
+            <Button
+              onClick={() => setShowConfirmModal(true)}
+              className="bg-green-500 hover:bg-green-600"
+              disabled={!examName}
+            >
+              Xác nhận tạo Exam
+            </Button>
           </div>
+          {/* Modal xác nhận gửi sử dụng ConfirmDialog */}
+          <ConfirmDialog
+            open={showConfirmModal}
+            onOpenChange={setShowConfirmModal}
+            onConfirm={async () => {
+              setIsSubmitting(true);
+              try {
+                const result = await handleCreateExam();
+                console.log('Kết quả tạo exam:', result);
+                setShowConfirmModal(false);
+                setStep(10);
+              } catch (e) {
+                console.error('Lỗi khi tạo exam:', e);
+              } finally {
+                setIsSubmitting(false);
+              }
+            }}
+            onCancel={() => setShowConfirmModal(false)}
+            isSubmitting={isSubmitting}
+            title="Confirm Submission"
+            message="Are you sure you want to submit this information?"
+            note="Once sent, it may not be editable."
+            confirmText="Confirm"
+            cancelText="Back"
+          />
         </>
       );
     }
@@ -1103,36 +1242,29 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
           </Button>
         </div>
         {/* Modal xác nhận gửi */}
-        <Dialog open={showConfirmModal} onOpenChange={setShowConfirmModal}>
-          <DialogContent className="max-w-md mx-auto">
-            <DialogHeader>
-              <DialogTitle>Confirm Submission</DialogTitle>
-            </DialogHeader>
-            <div className="mb-4 text-center text-lg font-semibold">Are you sure you want to submit this information?</div>
-            <div className="mb-4 text-center text-sm text-gray-500">Once sent, it may not be editable.</div>
-            <div className="flex justify-center gap-4 mt-6">
-                <Button
-                  onClick={async () => {
-                    setIsSubmitting(true);
-                    try {
-                      await handleCreateQuestionAndSolution();
-                      setShowConfirmModal(false);
-                      setStep(10);
-                    } catch (e) {
-                      // Có thể show toast lỗi ở đây
-                    } finally {
-                      setIsSubmitting(false);
-                    }
-                  }}
-                  className="bg-green-500 hover:bg-green-600"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? 'Submitting...' : 'Confirm'}
-                </Button>
-                <Button onClick={() => setShowConfirmModal(false)} className="bg-red-500 hover:bg-red-600" disabled={isSubmitting}>Back</Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <ConfirmDialog
+          open={showConfirmModal}
+          onOpenChange={setShowConfirmModal}
+          onConfirm={async () => {
+            setIsSubmitting(true);
+            try {
+              await handleCreateQuestionAndSolution();
+              setShowConfirmModal(false);
+              setStep(10);
+            } catch (e) {
+              // Có thể show toast lỗi ở đây
+            } finally {
+              setIsSubmitting(false);
+            }
+          }}
+          onCancel={() => setShowConfirmModal(false)}
+          isSubmitting={isSubmitting}
+          title="Confirm Submission"
+          message="Are you sure you want to submit this information?"
+          note="Once sent, it may not be editable."
+          confirmText="Confirm"
+          cancelText="Back"
+        />
       </>
     );
   }
@@ -1207,19 +1339,21 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
         </div>
           
         {/* Modal xác nhận gửi */}
-        <Dialog open={showConfirmModal} onOpenChange={setShowConfirmModal}>
-          <DialogContent className="max-w-md mx-auto">
-            <DialogHeader>
-              <DialogTitle>Confirm Submission</DialogTitle>
-            </DialogHeader>
-            <div className="mb-4 text-center text-lg font-semibold">Are you sure you want to submit this information?</div>
-            <div className="mb-4 text-center text-sm text-gray-500">Once sent, it may not be editable.</div>
-            <div className="flex justify-center gap-4 mt-6">
-              <Button onClick={() => { setShowConfirmModal(false); setStep(10); }} className="bg-green-500 hover:bg-green-600">Confirm</Button>
-              <Button onClick={() => setShowConfirmModal(false)} className="bg-red-500 hover:bg-red-600">Back</Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <ConfirmDialog
+          open={showConfirmModal}
+          onOpenChange={setShowConfirmModal}
+          onConfirm={() => {
+            setShowConfirmModal(false);
+            setStep(10);
+          }}
+          onCancel={() => setShowConfirmModal(false)}
+          isSubmitting={false}
+          title="Confirm Submission"
+          message="Are you sure you want to submit this information?"
+          note="Once sent, it may not be editable."
+          confirmText="Confirm"
+          cancelText="Back"
+        />
       </div>
     );
   }
@@ -1278,5 +1412,45 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
     </Card>
   );
 };
+
+// ConfirmDialog tái sử dụng
+const ConfirmDialog = ({
+  open,
+  onOpenChange,
+  onConfirm,
+  onCancel,
+  isSubmitting,
+  title = "Confirm Submission",
+  message = "Are you sure you want to submit this information?",
+  note = "Once sent, it may not be editable.",
+  confirmText = "Confirm",
+  cancelText = "Back"
+}) => (
+  <Dialog open={open} onOpenChange={onOpenChange}>
+    <DialogContent className="max-w-md mx-auto">
+      <DialogHeader>
+        <DialogTitle>{title}</DialogTitle>
+      </DialogHeader>
+      <div className="mb-4 text-center text-lg font-semibold">{message}</div>
+      <div className="mb-4 text-center text-sm text-gray-500">{note}</div>
+      <div className="flex justify-center gap-4 mt-6">
+        <Button
+          onClick={onConfirm}
+          className="bg-green-500 hover:bg-green-600"
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? "Submitting..." : confirmText}
+        </Button>
+        <Button
+          onClick={onCancel}
+          className="bg-red-500 hover:bg-red-600"
+          disabled={isSubmitting}
+        >
+          {cancelText}
+        </Button>
+      </div>
+    </DialogContent>
+  </Dialog>
+);
 
 export default MultiStepWizard; 
