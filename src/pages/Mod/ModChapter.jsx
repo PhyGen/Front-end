@@ -30,6 +30,8 @@ const ModChapter = () => {
   const [editRow, setEditRow] = useState({ id: '', name: '', semesterId: '' });
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
+  const [sort, setSort] = useState('id:asc');
+  const [pendingSort, setPendingSort] = useState('id:asc');
 
   const fetchData = () => {
     setLoading(true);
@@ -153,54 +155,57 @@ const ModChapter = () => {
                 </tr>
               </thead>
               <tbody>
-                {chapters.map(c => {
-                  const semester = semesters.find(s => s.id === c.semesterId);
-                  const grade = semester ? grades.find(g => g.id === semester.gradeId) : null;
-                  if (editId === c.id) {
+                {chapters
+                  .slice()
+                  .sort((a, b) => a.id - b.id)
+                  .map(c => {
+                    const semester = semesters.find(s => s.id === c.semesterId);
+                    const grade = semester ? grades.find(g => g.id === semester.gradeId) : null;
+                    if (editId === c.id) {
+                      return (
+                        <tr key={c.id} className="bg-yellow-50">
+                          <td className="px-4 py-2 border font-semibold">{editRow.id}</td>
+                          <td className="px-4 py-2 border">
+                            <Input value={editRow.name} onChange={e => setEditRow(r => ({ ...r, name: e.target.value }))} placeholder="Nhập tên chương" />
+                          </td>
+                          <td className="px-4 py-2 border">
+                            <Select value={editRow.semesterId} onValueChange={v => setEditRow(r => ({ ...r, semesterId: v }))}>
+                              <SelectTrigger className="w-32"><SelectValue placeholder="Chọn học kỳ" /></SelectTrigger>
+                              <SelectContent>
+                                {semesters.map(s => {
+                                  const grade = grades.find(g => g.id === s.gradeId);
+                                  return (
+                                    <SelectItem key={s.id} value={s.id.toString()}>
+                                      {s.name}-Lớp{grade ? grade.name : '-'}
+                                    </SelectItem>
+                                  );
+                                })}
+                              </SelectContent>
+                            </Select>
+                          </td>
+                          <td className="px-4 py-2 border">{formatDate(c.createdAt)}</td>
+                          <td className="px-4 py-2 border">{formatDate(c.updatedAt)}</td>
+                          <td className="px-4 py-2 border flex gap-2">
+                            <Button size="sm" className="bg-blue-500 hover:bg-blue-600 text-white" onClick={handleEditSave} disabled={!editRow.name.trim() || !editRow.semesterId}>Save</Button>
+                            <Button size="sm" className="bg-gray-400 hover:bg-gray-500 text-white" onClick={() => setEditId(null)}>Cancel</Button>
+                          </td>
+                        </tr>
+                      );
+                    }
                     return (
-                      <tr key={c.id} className="bg-yellow-50">
-                        <td className="px-4 py-2 border font-semibold">{editRow.id}</td>
-                        <td className="px-4 py-2 border">
-                          <Input value={editRow.name} onChange={e => setEditRow(r => ({ ...r, name: e.target.value }))} placeholder="Nhập tên chương" />
-                        </td>
-                        <td className="px-4 py-2 border">
-                          <Select value={editRow.semesterId} onValueChange={v => setEditRow(r => ({ ...r, semesterId: v }))}>
-                            <SelectTrigger className="w-32"><SelectValue placeholder="Chọn học kỳ" /></SelectTrigger>
-                            <SelectContent>
-                              {semesters.map(s => {
-                                const grade = grades.find(g => g.id === s.gradeId);
-                                return (
-                                  <SelectItem key={s.id} value={s.id.toString()}>
-                                    {s.name}-Lớp{grade ? grade.name : '-'}
-                                  </SelectItem>
-                                );
-                              })}
-                            </SelectContent>
-                          </Select>
-                        </td>
+                      <tr key={c.id} className="even:bg-slate-50">
+                        <td className="px-4 py-2 border">{c.id}</td>
+                        <td className="px-4 py-2 border">{c.name}</td>
+                        <td className="px-4 py-2 border">{semester ? semester.name : c.semesterId}-Lớp{grade ? grade.name : '-'}</td>
                         <td className="px-4 py-2 border">{formatDate(c.createdAt)}</td>
                         <td className="px-4 py-2 border">{formatDate(c.updatedAt)}</td>
                         <td className="px-4 py-2 border flex gap-2">
-                          <Button size="sm" className="bg-blue-500 hover:bg-blue-600 text-white" onClick={handleEditSave} disabled={!editRow.name.trim() || !editRow.semesterId}>Save</Button>
-                          <Button size="sm" className="bg-gray-400 hover:bg-gray-500 text-white" onClick={() => setEditId(null)}>Cancel</Button>
+                          <Button size="sm" className="bg-blue-500 hover:bg-blue-600 text-white" onClick={() => handleEdit(c.id)}>Edit</Button>
+                          <Button size="sm" className="bg-red-500 hover:bg-red-600 text-white" onClick={() => handleDelete(c.id)}>Delete</Button>
                         </td>
                       </tr>
                     );
-                  }
-                  return (
-                    <tr key={c.id} className="even:bg-slate-50">
-                      <td className="px-4 py-2 border">{c.id}</td>
-                      <td className="px-4 py-2 border">{c.name}</td>
-                      <td className="px-4 py-2 border">{semester ? semester.name : c.semesterId}-Lớp{grade ? grade.name : '-'}</td>
-                      <td className="px-4 py-2 border">{formatDate(c.createdAt)}</td>
-                      <td className="px-4 py-2 border">{formatDate(c.updatedAt)}</td>
-                      <td className="px-4 py-2 border flex gap-2">
-                        <Button size="sm" className="bg-blue-500 hover:bg-blue-600 text-white" onClick={() => handleEdit(c.id)}>Edit</Button>
-                        <Button size="sm" className="bg-red-500 hover:bg-red-600 text-white" onClick={() => handleDelete(c.id)}>Delete</Button>
-                      </td>
-                    </tr>
-                  );
-                })}
+                  })}
                 {adding && (
                   <tr className="bg-yellow-50">
                     <td className="px-4 py-2 border font-semibold">{newRow.id}</td>

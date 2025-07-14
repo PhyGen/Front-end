@@ -10,6 +10,8 @@ import ModLayout from "../pages/Mod/ModLayout";
 import Admin from "../pages/Admin/Admin";
 import CardDetail from '../components/CardDetail';
 
+console.log('Loading routes, ModLayout:', ModLayout);
+
 const publicRoutes = [
     { path: '/landing', component: Landing, layout: null },
     { path: '/signup', component: Signup, layout: null},
@@ -30,5 +32,7 @@ const privateRoutes = [
     // { path: '/staff',component: StaffLayout, layout: null, role: 'staff'},
 
 ];
+
+console.log('Private routes defined:', privateRoutes);
 
 export { publicRoutes, privateRoutes };
