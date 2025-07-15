@@ -14,6 +14,7 @@ const OCRDemo = () => {
   const [ocrResult, setOcrResult] = useState(null);
   const [ocrError, setOcrError] = useState(null);
   const [testText, setTestText] = useState('2 + 2 = 4\n∫ f(x) dx = F(x) + C');
+  const [ocrLanguage, setOcrLanguage] = useState('eng+vie');
 
   const handleFileSelect = (event) => {
     const file = event.target.files[0];
@@ -33,7 +34,7 @@ const OCRDemo = () => {
       setOcrResult(null);
 
       console.log('🖼️ Processing image:', selectedFile.name);
-      const result = await ocrService.processImageAdvanced(selectedFile);
+      const result = await ocrService.processImageAdvanced(selectedFile, ocrLanguage);
 
       if (result.success) {
         setOcrResult(result);
@@ -102,6 +103,20 @@ const OCRDemo = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Language Select */}
+            <div>
+              <Label htmlFor="ocr-language">OCR Language</Label>
+              <select
+                id="ocr-language"
+                value={ocrLanguage}
+                onChange={e => setOcrLanguage(e.target.value)}
+                className="mt-1 border rounded p-2 w-full"
+              >
+                <option value="eng+vie">English + Vietnamese</option>
+                <option value="eng">English Only</option>
+                <option value="vie">Vietnamese Only</option>
+              </select>
+            </div>
             {/* File Upload */}
             <div>
               <Label htmlFor="image-upload">Select Image File</Label>
