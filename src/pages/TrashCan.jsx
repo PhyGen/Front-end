@@ -4,6 +4,7 @@ import pdfIcon from "@/assets/icons/pdf-icon.svg";
 import wordIcon from "@/assets/icons/word-icon.svg";
 import emptyTrashIcon from "@/assets/icons/empty_trash_icon.png";
 import { useTranslation } from 'react-i18next';
+import { useTheme } from '../context/ThemeContext';
 
 // Demo: đổi sang [] để test trạng thái rỗng
 const trashFiles = [
@@ -14,12 +15,17 @@ const trashFiles = [
 
 const TrashCan = () => {
   const { t } = useTranslation();
+  const { theme } = useTheme();
 
   if (trashFiles.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[300px] py-12">
         <img src={emptyTrashIcon} alt="Empty Trash" className="w-48 h-48 mb-6 object-contain" />
-        <div className="text-2xl font-semibold text-gray-800 mb-2">{t('empty_trash_can')}</div>
+        <div
+          className={`text-2xl font-semibold mb-2 ${theme === 'dark' || (theme === 'auto' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'text-white' : 'text-gray-800'}`}
+        >
+          {t('empty_trash_can')}
+        </div>
         <div className="text-gray-500 text-base">
           {t('empty_trash_can_description')}
         </div>

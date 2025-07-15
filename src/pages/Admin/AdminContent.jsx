@@ -6,6 +6,7 @@ import AdminLesson from './AdminLesson';
 import AdminSetting from './AdminSetting';
 import AdminQuestion from './AdminQuestion';
 import AdminAccount from './AdminAccount';
+import AdminTextbook from './AdminTextbook';
 import { useAuth } from '@/context/AuthContext';
 import api from '../../config/axios';
 import { useEffect, useState } from 'react';
@@ -39,6 +40,7 @@ const AdminContent = ({ selected }) => {
   else if (selected === 'semester') content = <AdminSemester />;
   else if (selected === 'chapter') content = <AdminChapter />;
   else if (selected === 'lesson') content = <AdminLesson />;
+  else if (selected === 'textbook') content = <AdminTextbook />;
   else if (selected === 'setting') content = <AdminSetting />;
   else if (selected === 'question') content = <AdminQuestion />;
   else if (selected === 'account') content = <AdminAccount />;

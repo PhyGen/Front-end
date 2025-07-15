@@ -23,15 +23,18 @@ import CreateTypeSelect from "@/components/CreateTypeSelect";
 import MyExam from "./MyExam";
 import Recently from "./Recently";
 import TrashCan from "./TrashCan";
+import SharedWithMe from "./SharedWithMe";
+import Starred from "./Starred";
+import SpamContent from "./SpamContent";
 
 const Placeholder = ({ label, icon: Icon, description, color = "blue", children }) => (
-  <Card className="shadow-lg border-0 bg-gradient-to-br from-white to-slate-50 mb-8">
+  <Card className="shadow-lg border-0 bg-gradient-to-br from-white to-slate-50 dark:from-black dark:to-neutral-900 mb-8">
     <CardHeader className="text-center pb-4">
-      <div className={`w-16 h-16 bg-${color}-100 rounded-full flex items-center justify-center mx-auto mb-4`}>
-        <Icon className={`w-8 h-8 text-${color}-600`} />
+      <div className={`w-16 h-16 bg-${color}-100 dark:bg-neutral-800 rounded-full flex items-center justify-center mx-auto mb-4`}>
+        <Icon className={`w-8 h-8 text-${color}-600 dark:text-white`} />
       </div>
-      <CardTitle className="text-2xl font-bold text-slate-800">{label}</CardTitle>
-      <p className="text-slate-600 mt-2">{description}</p>
+      <CardTitle className="text-2xl font-bold text-slate-800 dark:text-white">{label}</CardTitle>
+      <p className="text-slate-600 dark:text-neutral-200 mt-2">{description}</p>
     </CardHeader>
     <CardContent className="text-center">
       {children}
@@ -78,7 +81,7 @@ const MainScreen = () => {
             description={t('shared_with_me_description')}
             color="green"
           >
-            {/* Nội dung động cho Shared with me */}
+            <SharedWithMe />
           </Placeholder>
         );
         break;
@@ -93,7 +96,7 @@ const MainScreen = () => {
             description={t('starred_description')}
             color="yellow"
           >
-            {/* Nội dung động cho Starred */}
+            <Starred />
           </Placeholder>
         );
         break;
@@ -105,7 +108,7 @@ const MainScreen = () => {
             description={t('spam_content_description')}
             color="red"
           >
-            {/* Nội dung động cho Spam Content */}
+            <SpamContent />
           </Placeholder>
         );
         break;
@@ -118,7 +121,7 @@ const MainScreen = () => {
   }
 
   return (
-    <div className="min-h-[80vh]">
+    <div className="min-h-[80vh] bg-white dark:bg-[#242526] text-slate-800 dark:text-white rounded-2xl">
       {content}
     </div>
   );

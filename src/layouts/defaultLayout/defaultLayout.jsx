@@ -11,11 +11,11 @@ const DefaultLayout = ({ children }) => {
     const { selectedKey, setSelectedKey } = useSidebar();
 
     return (
-        <div className="flex flex-col min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+        <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-[#1e1e1e] transition-colors duration-300">
             <Header/>
             <div className="flex flex-1 p-6 gap-6 max-lg:flex-col max-lg:p-4">
                 <Sidebar activeKey={selectedKey} onSelect={setSelectedKey} />
-                <main className="flex-1 min-w-0 bg-transparent">
+                <main className="flex-1 min-w-0 bg-white dark:bg-[#2a2a2a] rounded-xl shadow-sm p-4">
                     <div className="space-y-6">
                         {children}
                     </div>

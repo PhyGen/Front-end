@@ -32,7 +32,7 @@ const CreateTypeSelect = () => {
 
   return (
     <div className="flex flex-col items-center justify-center w-full h-full min-h-[70vh] p-4">
-      <Card className="w-full max-w-4xl shadow-xl border-0 bg-gradient-to-br from-slate-50 to-blue-50">
+      <Card className="w-full max-w-4xl shadow-xl border-0 bg-gradient-to-br from-slate-50 to-blue-50 dark:bg-[#242526] dark:bg-none">
         <CardHeader className="text-center pb-8">
           <CardTitle className="text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-blue-600">
             {t('what_to_create')}

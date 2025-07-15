@@ -30,7 +30,7 @@ const Card = ({
     >
       <div className="flex items-center justify-between px-4 pt-3 pb-2">
         {icon && <img src={icon} alt="File Icon" className="w-7 h-7" />}
-        <CardTitle className="flex-1 text-center text-base font-semibold truncate px-2">
+        <CardTitle className="flex-1 text-center text-base font-semibold truncate px-2 text-black">
           {title}
         </CardTitle>
         <button

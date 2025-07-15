@@ -6,9 +6,6 @@ import { Slider } from "@/components/ui/slider";
 import clsx from 'clsx';
 import semester1 from '@/assets/icons/semester1-logo.jpg';
 import semester2 from '@/assets/icons/semester2-logo.jpg';
-import exam45M from '@/assets/icons/exam-45 minutes.svg';
-import semesterExam from '@/assets/icons/semester exam.svg';
-import quiz from '@/assets/icons/test-quiz-svgrepo-com.svg';
 import avatarIcon from '@/assets/icons/avatar.jpg';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -104,7 +101,6 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
   const [semesters, setSemesters] = useState(mockSemesters);
   const [chapters, setChapters] = useState(mockChapters);
   const [lessons, setLessons] = useState(mockLessons);
-  const [questionList, setQuestionList] = useState(mockQuestionList);
   const [textbooks, setTextbooks] = useState(mockTextbooks);
   const [textbook, setTextbook] = useState(null); // id
   // --- State lựa chọn ---
@@ -114,16 +110,9 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
   const [chapter, setChapter] = useState(null); // sẽ là id
   const [lesson, setLesson] = useState(null); // sẽ là id
   const [difficulty, setDifficulty] = useState(0); // 0-4 corresponding to difficultyLevels
-  const [selectedExamType, setSelectedExamType] = useState(null);
-  const [selectedQuestions, setSelectedQuestions] = useState([]);
-  const [searchModalOpen, setSearchModalOpen] = useState(false);
-  const [filterChapter, setFilterChapter] = useState(null);
-  const [filterLesson, setFilterLesson] = useState(null);
-  const [filterDifficulty, setFilterDifficulty] = useState(null);
   const [questionType, setQuestionType] = useState(null);
   const [manualQuestion, setManualQuestion] = useState('');
   const [manualSolution, setManualSolution] = useState('');
-  const [manualSolutionLink, setManualSolutionLink] = useState('');
   const [manualQuestionSource, setManualQuestionSource] = useState('');
   const [manualExplanation, setManualExplanation] = useState('');
   const physicsSymbols = [
@@ -153,7 +142,6 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
   const [dragActive, setDragActive] = useState(false);
   const inputRef = useRef();
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [textResult, setTextResult] = useState('');
   const [isProcessingOCR, setIsProcessingOCR] = useState(false);
   const [ocrResult, setOcrResult] = useState(null);
   const [ocrError, setOcrError] = useState(null);
@@ -177,6 +165,9 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
   // --- State riêng cho modal Search Question ---
   const [modalChapters, setModalChapters] = useState([]);
   const [modalLessons, setModalLessons] = useState([]);
+
+  // Thêm useState cho searchModalOpen
+  const [searchModalOpen, setSearchModalOpen] = useState(false);
 
   // Khi chọn filterExamChapter, gọi API lấy lessons cho modal
   useEffect(() => {
@@ -284,7 +275,7 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
           setManualQuestion(result.text);
         }
         
-        setTextResult(result.text);
+        // setTextResult(result.text); // Xóa textResult
       } else {
         console.error('❌ OCR failed:', result.error);
         setOcrError(result.error);
@@ -300,16 +291,17 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
   function handleRemove() {
     setAiImage(null);
     if (inputRef.current) inputRef.current.value = '';
-    setTextResult('');
+    // setTextResult(''); // Xóa textResult
     setOcrResult(null);
     setOcrError(null);
   }
 
-  const handleSelectQuestion = (id) => {
-    setSelectedQuestions((prev) =>
-      prev.includes(id) ? prev.filter((q) => q !== id) : [...prev, id]
-    );
-  };
+  // XÓA hàm handleSelectQuestion không dùng
+  // const handleSelectQuestion = (id) => {
+  //   setSelectedQuestions((prev) =>
+  //     prev.includes(id) ? prev.filter((q) => q !== id) : [...prev, id]
+  //   );
+  // };
   
   React.useEffect(()=>{
     console.log("Cái question sao không lưu được",manualQuestion);
@@ -400,7 +392,7 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
       }
     })();
     // Reset các bước sau
-    setSemester(null); setChapter(null); setLesson(null); setChapters([]); setLessons([]); setQuestionList([]);
+    setSemester(null); setChapter(null); setLesson(null); setChapters([]); setLessons([]); setExamQuestionsList([]);
   }, [grade]);
 
   // --- API: Lấy chapters khi chọn semester ---
@@ -424,7 +416,7 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
         setChapters(mockChapters.filter(c => c.semesterId === semester));
       }
     })();
-    setChapter(null); setLesson(null); setLessons([]); setQuestionList([]);
+    setChapter(null); setLesson(null); setLessons([]);
   }, [semester]);
 
   // --- API: Lấy lessons khi chọn chapter ---
@@ -447,7 +439,7 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
         setLessons(mockLessons.filter(l => l.chapterId === chapter));
       }
     })();
-    setQuestionList([]);
+    setExamQuestionsList([]);
   }, [chapter]);
 
   // --- API: Lấy questionList khi chọn lesson ---
@@ -460,14 +452,14 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
         console.log('❓ Questions API response:', res.data);
         if (res.data && Array.isArray(res.data.items) && res.data.items.length > 0) {
           console.log('✅ Questions found:', res.data.items);
-          setQuestionList(res.data.items);
+          setExamQuestionsList(res.data.items);
         } else {
           console.log('⚠️ No questions found, using mock data');
-          setQuestionList(mockQuestionList.filter(q => q.lessonId === lesson));
+          setExamQuestionsList(mockQuestionList.filter(q => q.lessonId === lesson));
         }
       } catch (error) {
         console.error('❌ Error fetching questions:', error);
-        setQuestionList(mockQuestionList.filter(q => q.lessonId === lesson));
+        setExamQuestionsList(mockQuestionList.filter(q => q.lessonId === lesson));
       }
     })();
   }, [lesson]);
@@ -1019,8 +1011,8 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
             <Card
               key={c.id}
               className={clsx(
-                'cursor-pointer border-2 transition p-4',
-                chapter === c.id ? 'border-blue-500 shadow-lg bg-blue-50' : 'border-slate-200 hover:border-blue-300'
+                'p-4 border-2 rounded-lg cursor-pointer transition',
+                chapter === c.id ? 'bg-blue-600 text-white' : 'border-slate-200 hover:border-blue-300'
               )}
               onClick={() => setChapter(c.id)}
             >
@@ -1045,8 +1037,8 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
             <Card
               key={l.id}
               className={clsx(
-                'cursor-pointer border-2 transition p-4',
-                lesson === l.id ? 'border-blue-500 shadow-lg bg-blue-50' : 'border-slate-200 hover:border-blue-300'
+                'p-4 border-2 rounded-lg cursor-pointer transition',
+                lesson === l.id ? 'bg-blue-600 text-white' : 'border-slate-200 hover:border-blue-300'
               )}
               onClick={() => setLesson(l.id)}
             >
@@ -1106,7 +1098,7 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
               onClick={() => setQuestionType(tq.id)}
             >
               <CardContent className="flex flex-col items-center justify-center h-full w-full">
-                <img src={tq.icon} alt={tq.label} className="w-40 h-40 object-contain mb-4" />
+                <img src={tq.icon} alt={tq.label} className="w-40 h-40 object-contain mb-4 filter invert-0 dark:invert" />
                 <span className="text-xl font-bold text-center leading-tight">{tq.label}</span>
               </CardContent>
             </Card>
@@ -1130,7 +1122,7 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
             <div className="flex items-center gap-2 mb-1">
               <span className="font-medium">{t('insert_symbol')}</span>
               {physicsSymbols.map(s => (
-                <button type="button" key={s.symbol} className="px-2 py-1 rounded hover:bg-blue-100 text-lg" onClick={() => setManualQuestion(manualQuestion + s.symbol)} title={s.label}>{s.symbol}</button>
+                <button type="button" key={s.symbol} className="px-2 py-1 rounded transition hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-blue-600 dark:hover:text-blue-300 text-lg" onClick={() => setManualQuestion(manualQuestion + s.symbol)} title={s.label}>{s.symbol}</button>
               ))}
             </div>
             <ReactQuill
@@ -1146,7 +1138,7 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
             <ShadInput
               value={manualQuestionSource}
               onChange={e => setManualQuestionSource(e.target.value)}
-              className="bg-white text-black border border-slate-300 rounded-lg p-3"
+              className="border border-slate-300 rounded-lg p-3 bg-white text-black dark:bg-[#23272f] dark:text-white"
               placeholder={t('enter_question_source')}
             />
           </div>
@@ -1155,7 +1147,7 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
             <div className="flex items-center gap-2 mb-1">
               <span className="font-medium">{t('insert_symbol')}</span>
               {physicsSymbols.map(s => (
-                <button type="button" key={s.symbol} className="px-2 py-1 rounded hover:bg-blue-100 text-lg" onClick={() => setManualSolution(manualSolution + s.symbol)} title={s.label}>{s.symbol}</button>
+                <button type="button" key={s.symbol} className="px-2 py-1 rounded transition hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-blue-600 dark:hover:text-blue-300 text-lg" onClick={() => setManualSolution(manualSolution + s.symbol)} title={s.label}>{s.symbol}</button>
               ))}
             </div>
             <ReactQuill
@@ -1171,7 +1163,7 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
             <div className="flex items-center gap-2 mb-1">
               <span className="font-medium">{t('insert_symbol')}</span>
               {physicsSymbols.map(s => (
-                <button type="button" key={s.symbol} className="px-2 py-1 rounded hover:bg-blue-100 text-lg" onClick={() => setManualExplanation(manualExplanation + s.symbol)} title={s.label}>{s.symbol}</button>
+                <button type="button" key={s.symbol} className="px-2 py-1 rounded transition hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-blue-600 dark:hover:text-blue-300 text-lg" onClick={() => setManualExplanation(manualExplanation + s.symbol)} title={s.label}>{s.symbol}</button>
               ))}
             </div>
             <ReactQuill
@@ -1209,7 +1201,7 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
     content = (
       <>
         <div className="text-2xl font-semibold text-center mb-6">{t('review_question_and_solution')}</div>
-        <div className="max-w-2xl mx-auto bg-slate-50 rounded-lg p-6 border mb-8">
+        <div className="max-w-2xl mx-auto bg-slate-50 dark:bg-[#23272f] text-black dark:text-white rounded-lg p-6 border mb-8">
           <div className="mb-4">
             <span className="font-bold">{t('difficulty_level')}:</span> {difficultyLabel}
           </div>
@@ -1305,7 +1297,7 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
                   <div className="rounded-full bg-gray-100 p-3 mb-2">
                     <Upload className="w-8 h-8 text-gray-400" />
                   </div>
-                  <span className="text-base text-gray-600 font-medium">{t('drag_n_drop_files_here_or_click_to_select_files')}</span>
+                  <span className="text-base text-black font-medium">{t('drag_n_drop_files_here_or_click_to_select_files')}</span>
                   <span className="text-xs text-gray-400 mt-1">{t('you_can_upload_1_image_file_up_to_8_mb')}</span>
                 </div>
               </>
@@ -1380,12 +1372,9 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
               setChapter(null);
               setLesson(null);
               setDifficulty(0);
-              setSelectedExamType(null);
-              setSelectedQuestions([]);
               setQuestionType(null);
               setManualQuestion('');
               setManualSolution('');
-              setManualSolutionLink('');
               setManualQuestionSource('');
               setManualExplanation('');
               setAiImage(null);
@@ -1400,11 +1389,11 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
 
   return (
     <Card className="max-w-2xl mx-auto mt-8 p-4">
-      <CardHeader>
-        <Stepper value={step} max={(type === 'exam' ? stepsExam.length : stepsQuestion.length) - 1} className="mb-6">
+      <CardHeader className="text-white font-semibold">
+        <Stepper value={step} max={(type === 'exam' ? stepsExam.length : stepsQuestion.length) - 1} className="mb-6 text-white font-semibold">
           {( type === 'exam' ? stepsExam : stepsQuestion ).map((s, idx) => (
-            <Step key={s.label} value={idx}>
-              {s.label}
+            <Step key={s.label} value={idx} className="font-semibold">
+              <span className="text-black dark:text-white">{s.label}</span>
             </Step>
           ))}
         </Stepper>

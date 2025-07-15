@@ -9,6 +9,7 @@ import AddIcon from '@/assets/icons/add-symbol-svgrepo-com.svg';
 import loadingGif from '@/assets/icons/loading.gif';
 import { useNavigate, useLocation } from 'react-router-dom';
 import StatusNotFound from '@/assets/icons/status-notfound-svgrepo-com.svg';
+import { useAuth } from '../../context/AuthContext';
 
 function formatDate(dateString) {
   if (!dateString) return '-';
@@ -22,6 +23,7 @@ function formatDate(dateString) {
 }
 
 const AdminLesson = () => {
+  const { user } = useAuth();
   const [lessons, setLessons] = useState([]);
   const [chapters, setChapters] = useState([]);
   const [newLesson, setNewLesson] = useState({ name: '', chapterId: '' });
@@ -90,9 +92,32 @@ const AdminLesson = () => {
     if (!newRow.name.trim() || !newRow.chapterId) return;
     setAdding(false);
     setNewRow({ id: '', name: '', chapterId: '' });
+    
+    // Log thông tin request để debug
+    console.log('Creating lesson with data:', { name: newRow.name, chapterId: newRow.chapterId });
+    console.log('Current token:', localStorage.getItem('token'));
+    console.log('Current user:', user);
+    console.log('User role:', user?.role);
+    
     api.post('/lessons', { name: newRow.name, chapterId: newRow.chapterId })
-      .then(fetchData)
-      .catch(console.error);
+      .then(response => {
+        console.log('Lesson created successfully:', response.data);
+        fetchData();
+      })
+      .catch(error => {
+        console.error('Error creating lesson:', error);
+        console.error('Error response:', error.response?.data);
+        console.error('Error status:', error.response?.status);
+        
+        // Hiển thị thông báo lỗi chi tiết hơn
+        if (error.response?.status === 403) {
+          alert(`Lỗi 403: Không có quyền tạo lesson.\n\nThông tin debug:\n- User Role: ${user?.role}\n- User ID: ${user?.id}\n\nCó thể backend chỉ cho phép role "mod" tạo lesson, không cho phép "admin".\nVui lòng kiểm tra lại quyền truy cập hoặc liên hệ admin.`);
+        } else if (error.response?.status === 401) {
+          alert('Lỗi 401: Token không hợp lệ. Vui lòng đăng nhập lại.');
+        } else {
+          alert(`Lỗi tạo lesson: ${error.response?.data?.message || error.message}`);
+        }
+      });
   };
 
   const handleEdit = (id) => {
@@ -142,6 +167,14 @@ const AdminLesson = () => {
     <Card>
       <CardHeader>
         <CardTitle>Lesson Management</CardTitle>
+        {/* Debug info */}
+        {user && (
+          <div className="text-sm text-gray-600 mt-2">
+            <p>User ID: {user.id}</p>
+            <p>User Role: {user.role}</p>
+            <p>User Email: {user.email}</p>
+          </div>
+        )}
       </CardHeader>
       <CardContent>
         <div className="mb-4 flex gap-2 items-center flex-wrap">
