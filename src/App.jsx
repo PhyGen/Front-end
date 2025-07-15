@@ -25,9 +25,6 @@ function AppRoutes() {
     '/', // Thêm path mặc định
   ];
 
-  console.log('Valid paths:', validPaths);
-  console.log('Private routes:', privateRoutes);
-
   return (
     <Routes>
       {/* Public Routes */}
@@ -59,7 +56,6 @@ function AppRoutes() {
         const Page = route.component;
         let Layout = DefaultLayout;
 
-        console.log('Processing private route:', route.path, 'component:', Page);
 
         if (route.layout) {
           Layout = route.layout;

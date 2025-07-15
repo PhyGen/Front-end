@@ -10,6 +10,7 @@ import avatarIcon from '../assets/icons/avatar.jpg';
 import SettingsModal from '../components/SettingsModal';
 import { useTranslation } from 'react-i18next';
 import Navbar from '@/components/Navbar';
+import { useSidebar } from '../context/SidebarContext';
 import DisplaySettings from '../components/DisplaySettings';
 import {
   Dialog,
@@ -28,6 +29,7 @@ const Header = () => {
   const [isDisplayOpen, setIsDisplayOpen] = useState(false);
   const [isContributeOpen, setIsContributeOpen] = useState(false);
   const { t } = useTranslation();
+  const { setSelectedKey } = useSidebar();
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -65,7 +67,7 @@ const Header = () => {
   rounded-b-2xl
 ">
         {/* Logo */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 cursor-pointer" onClick={() => setSelectedKey('home')}>
           <Avatar className="h-12 w-12">
             <AvatarImage src={phygenIcon} alt="PhyGen Logo" />
             <AvatarFallback>PG</AvatarFallback>
