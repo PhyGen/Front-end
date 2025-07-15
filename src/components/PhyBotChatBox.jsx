@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import { MessageBox, Input, Button } from 'react-chat-elements';
 import 'react-chat-elements/dist/main.css';
 import api from '@/config/axios';
-
 const BOT_NAME = "PhyBot";
 const BOT_AVATAR = "/src/assets/icons/phygen-icon.png";
 

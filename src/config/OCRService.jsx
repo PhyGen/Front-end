@@ -23,21 +23,17 @@ class OCRService {
   }
 
   // Xử lý OCR cho hình ảnh
-  async processImage(imageFile) {
+  async processImage(imageFile, language = 'eng+vie') {
     if (!this.isInitialized) {
       await this.initialize();
     }
 
     try {
       console.log('🖼️ Processing image with OCR...');
-      
-      // Sử dụng API đơn giản hơn
-      const result = await Tesseract.recognize(imageFile, 'eng', {
+      const result = await Tesseract.recognize(imageFile, language, {
         logger: m => console.log('📝 Tesseract:', m)
       });
-      
       console.log('📄 OCR Result:', result);
-      
       return {
         success: true,
         text: result.data.text,
@@ -57,62 +53,39 @@ class OCRService {
   }
 
   // Xử lý OCR với pre-processing để cải thiện độ chính xác
-  async processImageWithPreprocessing(imageFile) {
+  async processImageWithPreprocessing(imageFile, language = 'eng+vie') {
     if (!this.isInitialized) {
       await this.initialize();
     }
 
     try {
       console.log('🖼️ Processing image with preprocessing...');
-      
-      // Tạo canvas để pre-process image
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       const img = new Image();
-      
       return new Promise((resolve, reject) => {
         img.onload = async () => {
           try {
-            // Set canvas size
             canvas.width = img.width;
             canvas.height = img.height;
-            
-            // Draw original image
             ctx.drawImage(img, 0, 0);
-            
-            // Get image data for processing
             const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
             const data = imageData.data;
-            
-            // Apply preprocessing: Increase contrast and reduce noise
+            // Grayscale + tăng contrast + binarization
             for (let i = 0; i < data.length; i += 4) {
-              // Convert to grayscale and increase contrast
               const gray = (data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114);
-              const contrast = Math.min(255, Math.max(0, (gray - 128) * 1.5 + 128));
-              
-              data[i] = contrast;     // Red
-              data[i + 1] = contrast; // Green
-              data[i + 2] = contrast; // Blue
-              // Alpha remains unchanged
+              let contrast = Math.min(255, Math.max(0, (gray - 128) * 1.5 + 128));
+              // Binarization (threshold)
+              contrast = contrast > 160 ? 255 : 0;
+              data[i] = data[i + 1] = data[i + 2] = contrast;
             }
-            
-            // Put processed image data back
             ctx.putImageData(imageData, 0, 0);
-            
-            // Convert canvas to blob
             canvas.toBlob(async (blob) => {
               try {
-                const processedImageUrl = URL.createObjectURL(blob);
-                
-                // Perform OCR on processed image
-                const result = await Tesseract.recognize(blob, 'eng', {
+                const result = await Tesseract.recognize(blob, language, {
                   logger: m => console.log('📝 Tesseract:', m)
                 });
-                
-                // Clean up - không cần revoke URL nữa vì dùng blob trực tiếp
-                
                 console.log('📄 Processed OCR Result:', result);
-                
                 resolve({
                   success: true,
                   text: result.data.text,
@@ -125,16 +98,13 @@ class OCRService {
                 reject(error);
               }
             }, 'image/png');
-            
           } catch (error) {
             reject(error);
           }
         };
-        
         img.onerror = () => reject(new Error('Failed to load image'));
         img.src = URL.createObjectURL(imageFile);
       });
-      
     } catch (error) {
       console.error('❌ OCR processing with preprocessing failed:', error);
       return {
@@ -146,46 +116,34 @@ class OCRService {
   }
 
   // Xử lý OCR với nhiều phương pháp và chọn kết quả tốt nhất
-  async processImageAdvanced(imageFile) {
+  async processImageAdvanced(imageFile, language = 'eng+vie') {
     try {
       console.log('🖼️ Processing image with advanced OCR...');
-      
-      // Thử cả hai phương pháp
       const [normalResult, processedResult] = await Promise.allSettled([
-        this.processImage(imageFile),
-        this.processImageWithPreprocessing(imageFile)
+        this.processImage(imageFile, language),
+        this.processImageWithPreprocessing(imageFile, language)
       ]);
-      
-      // So sánh kết quả và chọn phương pháp tốt hơn
       const results = [];
-      
       if (normalResult.status === 'fulfilled' && normalResult.value.success) {
         results.push({
           method: 'normal',
           ...normalResult.value
         });
       }
-      
       if (processedResult.status === 'fulfilled' && processedResult.value.success) {
         results.push({
           method: 'processed',
           ...processedResult.value
         });
       }
-      
       if (results.length === 0) {
         throw new Error('All OCR methods failed');
       }
-      
-      // Chọn kết quả có confidence cao nhất
-      const bestResult = results.reduce((best, current) => 
+      const bestResult = results.reduce((best, current) =>
         current.confidence > best.confidence ? current : best
       );
-      
       console.log('🏆 Best OCR result:', bestResult);
-      
       return bestResult;
-      
     } catch (error) {
       console.error('❌ Advanced OCR processing failed:', error);
       return {
