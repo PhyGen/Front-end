@@ -5,7 +5,6 @@ import { Input } from '@/components/ui/input';
 import api from '../../config/axios';
 import AddIcon from '@/assets/icons/add-symbol-svgrepo-com.svg';
 import loadingGif from '@/assets/icons/loading.gif';
-import decodeBase64Id from '@/config/Base64Decode';
 
 function formatDate(dateString) {
   if (!dateString) return '-';
@@ -18,8 +17,8 @@ function formatDate(dateString) {
   return `${yyyy}-${mm}-${dd} ${hh}:${min}`;
 }
 
-const AdminGrade = () => {
-  const [grades, setGrades] = useState([]);
+const AdminTextbook = () => {
+  const [textbooks, setTextbooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
   const [newRow, setNewRow] = useState({ id: '', name: '' });
@@ -29,21 +28,21 @@ const AdminGrade = () => {
   const [deletingId, setDeletingId] = useState(null);
   const [filterName, setFilterName] = useState("");
 
-  useEffect(() => {
-    fetchGrades();
-  }, []);
-
-  const fetchGrades = () => {
+  const fetchTextbooks = () => {
     setLoading(true);
-    api.get('/grades')
-      .then(res => setGrades(res.data))
+    api.get('/text-books')
+      .then(res => setTextbooks(res.data))
       .catch(console.error)
       .finally(() => setLoading(false));
   };
 
+  useEffect(() => {
+    fetchTextbooks();
+  }, []);
+
   const handleAdd = () => {
     if (adding) return;
-    const nextId = grades.length > 0 ? Math.max(...grades.map(g => g.id)) + 1 : 1;
+    const nextId = textbooks.length > 0 ? Math.max(...textbooks.map(t => t.id)) + 1 : 1;
     setNewRow({ id: nextId, name: '' });
     setAdding(true);
   };
@@ -57,15 +56,14 @@ const AdminGrade = () => {
     if (!newRow.name.trim()) return;
     setAdding(false);
     setNewRow({ id: '', name: '' });
-    api.post('/grades', { name: newRow.name })
-      .then(fetchGrades)
+    api.post('/text-books', { name: newRow.name })
+      .then(fetchTextbooks)
       .catch(console.error);
   };
 
-  // --- EDIT ---
-  const handleEdit = (g) => {
-    setEditId(g.id);
-    setEditRow({ id: g.id, name: g.name });
+  const handleEdit = (t) => {
+    setEditId(t.id);
+    setEditRow({ id: t.id, name: t.name });
   };
   const handleEditCancel = () => {
     setEditId(null);
@@ -75,10 +73,10 @@ const AdminGrade = () => {
     if (!editRow.name.trim()) return;
     setSaving(true);
     try {
-      await api.put(`/grades/${editRow.id}`, { id: editRow.id, name: editRow.name });
+      await api.put(`/text-books/${editRow.id}`, { id: editRow.id, name: editRow.name });
       setEditId(null);
       setEditRow({ id: '', name: '' });
-      fetchGrades();
+      fetchTextbooks();
     } catch (e) {
       alert('Lưu thất bại!');
     } finally {
@@ -86,13 +84,12 @@ const AdminGrade = () => {
     }
   };
 
-  // --- DELETE ---
   const handleDelete = async (id) => {
     if (!window.confirm('Bạn có chắc chắn muốn xóa?')) return;
     setDeletingId(id);
     try {
-      await api.delete(`/grades/${id}`);
-      fetchGrades();
+      await api.delete(`/text-books/${id}`);
+      fetchTextbooks();
     } catch (e) {
       alert('Xóa thất bại!');
     } finally {
@@ -103,14 +100,14 @@ const AdminGrade = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Grade Management</CardTitle>
+        <CardTitle>Textbook Management</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="mb-4 flex gap-2 items-center">
           <Input
             value={filterName}
             onChange={e => setFilterName(e.target.value)}
-            placeholder="Tìm kiếm tên lớp"
+            placeholder="Tìm kiếm tên sách giáo khoa"
             className="w-64"
           />
           <Button onClick={handleAdd} className="flex items-center gap-1 bg-black hover:bg-neutral-800 text-white">
@@ -128,36 +125,36 @@ const AdminGrade = () => {
               <thead>
                 <tr className="bg-slate-100">
                   <th className="px-4 py-2 border">ID</th>
-                  <th className="px-4 py-2 border">Tên lớp</th>
+                  <th className="px-4 py-2 border">Tên sách giáo khoa</th>
                   <th className="px-4 py-2 border">Created At</th>
                   <th className="px-4 py-2 border">Updated At</th>
                   <th className="px-4 py-2 border">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {grades.filter(g => g.name.toLowerCase().includes(filterName.toLowerCase())).map(g => (
-                  editId === g.id ? (
-                    <tr key={g.id} className="bg-yellow-50">
+                {textbooks.filter(t => t.name.toLowerCase().includes(filterName.toLowerCase())).map(t => (
+                  editId === t.id ? (
+                    <tr key={t.id} className="bg-yellow-50">
                       <td className="px-4 py-2 border font-semibold">{editRow.id}</td>
                       <td className="px-4 py-2 border">
                         <Input value={editRow.name} onChange={e => setEditRow(r => ({ ...r, name: e.target.value }))} />
                       </td>
-                      <td className="px-4 py-2 border">{formatDate(g.createdAt)}</td>
-                      <td className="px-4 py-2 border">{formatDate(g.updatedAt)}</td>
+                      <td className="px-4 py-2 border">{formatDate(t.createdAt)}</td>
+                      <td className="px-4 py-2 border">{formatDate(t.updatedAt)}</td>
                       <td className="px-4 py-2 border flex gap-2">
                         <Button size="sm" className="bg-blue-500 hover:bg-blue-600 text-white" onClick={handleEditSave} disabled={saving || !editRow.name.trim()}>Save</Button>
                         <Button size="sm" className="bg-gray-400 hover:bg-gray-500 text-white" onClick={handleEditCancel} disabled={saving}>Cancel</Button>
                       </td>
                     </tr>
                   ) : (
-                    <tr key={g.id} className="even:bg-slate-50">
-                      <td className="px-4 py-2 border">{g.encodedId ? decodeBase64Id(g.encodedId) : g.id}</td>
-                      <td className="px-4 py-2 border">{g.name}</td>
-                      <td className="px-4 py-2 border">{formatDate(g.createdAt)}</td>
-                      <td className="px-4 py-2 border">{formatDate(g.updatedAt)}</td>
+                    <tr key={t.id} className="even:bg-slate-50">
+                      <td className="px-4 py-2 border">{t.id}</td>
+                      <td className="px-4 py-2 border">{t.name}</td>
+                      <td className="px-4 py-2 border">{formatDate(t.createdAt)}</td>
+                      <td className="px-4 py-2 border">{formatDate(t.updatedAt)}</td>
                       <td className="px-4 py-2 border flex gap-2">
-                        <Button size="sm" className="bg-blue-500 hover:bg-blue-600 text-white" onClick={() => handleEdit(g)}>Edit</Button>
-                        <Button size="sm" className="bg-red-500 hover:bg-red-600 text-white" onClick={() => handleDelete(g.id)} disabled={deletingId === g.id}>{deletingId === g.id ? '...' : 'Delete'}</Button>
+                        <Button size="sm" className="bg-blue-500 hover:bg-blue-600 text-white" onClick={() => handleEdit(t)}>Edit</Button>
+                        <Button size="sm" className="bg-red-500 hover:bg-red-600 text-white" onClick={() => handleDelete(t.id)} disabled={deletingId === t.id}>{deletingId === t.id ? '...' : 'Delete'}</Button>
                       </td>
                     </tr>
                   )
@@ -166,7 +163,7 @@ const AdminGrade = () => {
                   <tr className="bg-yellow-50">
                     <td className="px-4 py-2 border font-semibold">{newRow.id}</td>
                     <td className="px-4 py-2 border">
-                      <Input value={newRow.name} onChange={e => setNewRow(r => ({ ...r, name: e.target.value }))} placeholder="Nhập tên lớp" />
+                      <Input value={newRow.name} onChange={e => setNewRow(r => ({ ...r, name: e.target.value }))} placeholder="Nhập tên sách giáo khoa" />
                     </td>
                     <td className="px-4 py-2 border text-slate-400">-</td>
                     <td className="px-4 py-2 border text-slate-400">-</td>
@@ -185,4 +182,4 @@ const AdminGrade = () => {
   );
 };
 
-export default AdminGrade; 
+export default AdminTextbook; 

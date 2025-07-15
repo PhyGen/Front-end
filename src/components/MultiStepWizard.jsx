@@ -142,7 +142,6 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
   const [dragActive, setDragActive] = useState(false);
   const inputRef = useRef();
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [textResult, setTextResult] = useState('');
   const [isProcessingOCR, setIsProcessingOCR] = useState(false);
   const [ocrResult, setOcrResult] = useState(null);
   const [ocrError, setOcrError] = useState(null);
@@ -156,11 +155,13 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
   const [filterExamLesson, setFilterExamLesson] = useState(null);
   const [filterExamDifficulty, setFilterExamDifficulty] = useState(null);
   const [examQuestionsList, setExamQuestionsList] = useState([]);
-  const [examReviewSolutions, setExamReviewSolutions] = useState({}); // { [questionId]: {solution, explanation} }
 
   // --- State riêng cho modal Search Question ---
   const [modalChapters, setModalChapters] = useState([]);
   const [modalLessons, setModalLessons] = useState([]);
+
+  // Thêm useState cho searchModalOpen
+  const [searchModalOpen, setSearchModalOpen] = useState(false);
 
   // Khi chọn filterExamChapter, gọi API lấy lessons cho modal
   useEffect(() => {
@@ -268,7 +269,7 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
           setManualQuestion(result.text);
         }
         
-        setTextResult(result.text);
+        // setTextResult(result.text); // Xóa textResult
       } else {
         console.error('❌ OCR failed:', result.error);
         setOcrError(result.error);
@@ -284,16 +285,17 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
   function handleRemove() {
     setAiImage(null);
     if (inputRef.current) inputRef.current.value = '';
-    setTextResult('');
+    // setTextResult(''); // Xóa textResult
     setOcrResult(null);
     setOcrError(null);
   }
 
-  const handleSelectQuestion = (id) => {
-    setSelectedQuestions((prev) =>
-      prev.includes(id) ? prev.filter((q) => q !== id) : [...prev, id]
-    );
-  };
+  // XÓA hàm handleSelectQuestion không dùng
+  // const handleSelectQuestion = (id) => {
+  //   setSelectedQuestions((prev) =>
+  //     prev.includes(id) ? prev.filter((q) => q !== id) : [...prev, id]
+  //   );
+  // };
   
   React.useEffect(()=>{
     console.log("Cái question sao không lưu được",manualQuestion);
@@ -384,7 +386,7 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
       }
     })();
     // Reset các bước sau
-    setSemester(null); setChapter(null); setLesson(null); setChapters([]); setLessons([]); setQuestionList([]);
+    setSemester(null); setChapter(null); setLesson(null); setChapters([]); setLessons([]); setExamQuestionsList([]);
   }, [grade]);
 
   // --- API: Lấy chapters khi chọn semester ---
@@ -431,7 +433,7 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
         setLessons(mockLessons.filter(l => l.chapterId === chapter));
       }
     })();
-    setQuestionList([]);
+    setExamQuestionsList([]);
   }, [chapter]);
 
   // --- API: Lấy questionList khi chọn lesson ---
@@ -444,14 +446,14 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
         console.log('❓ Questions API response:', res.data);
         if (res.data && Array.isArray(res.data.items) && res.data.items.length > 0) {
           console.log('✅ Questions found:', res.data.items);
-          setQuestionList(res.data.items);
+          setExamQuestionsList(res.data.items);
         } else {
           console.log('⚠️ No questions found, using mock data');
-          setQuestionList(mockQuestionList.filter(q => q.lessonId === lesson));
+          setExamQuestionsList(mockQuestionList.filter(q => q.lessonId === lesson));
         }
       } catch (error) {
         console.error('❌ Error fetching questions:', error);
-        setQuestionList(mockQuestionList.filter(q => q.lessonId === lesson));
+        setExamQuestionsList(mockQuestionList.filter(q => q.lessonId === lesson));
       }
     })();
   }, [lesson]);
@@ -865,7 +867,7 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
         <div className="text-2xl font-semibold text-center mb-6">{t('select_chapter_for_your', { type })}</div>
         <div className="grid grid-cols-2 gap-4 max-h-[400px] overflow-y-auto mb-8">
           {chapters.map((c) => (
-            <div
+            <Card
               key={c.id}
               className={clsx(
                 'p-4 border-2 rounded-lg cursor-pointer transition',
@@ -873,8 +875,6 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
               )}
               onClick={() => setChapter(c.id)}
             >
-              {c.title}
-            </div>
               <CardContent className="p-2">
                 <span className="text-sm font-medium">{c.name}</span>
               </CardContent>
@@ -893,7 +893,7 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
         <div className="text-2xl font-semibold text-center mb-6">{t('select_lesson_for_your', { type })}</div>
         <div className="grid grid-cols-2 gap-4 max-h-[400px] overflow-y-auto mb-8">
           {lessons.map((l) => (
-            <div
+            <Card
               key={l.id}
               className={clsx(
                 'p-4 border-2 rounded-lg cursor-pointer transition',
@@ -901,8 +901,6 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
               )}
               onClick={() => setLesson(l.id)}
             >
-              {l.title}
-            </div>
               <CardContent className="p-2">
                 <span className="text-sm font-medium">{l.name}</span>
               </CardContent>
@@ -1008,7 +1006,7 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
             <div className="flex items-center gap-2 mb-1">
               <span className="font-medium">{t('insert_symbol')}</span>
               {physicsSymbols.map(s => (
-                <button type="button" key={s.symbol} className="px-2 py-1 rounded hover:bg-blue-100 text-lg" onClick={() => setManualSolution(manualSolution + s.symbol)} title={s.label}>{s.symbol}</button>
+                <button type="button" key={s.symbol} className="px-2 py-1 rounded transition hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-blue-600 dark:hover:text-blue-300 text-lg" onClick={() => setManualSolution(manualSolution + s.symbol)} title={s.label}>{s.symbol}</button>
               ))}
             </div>
             <ReactQuill
@@ -1024,7 +1022,7 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
             <div className="flex items-center gap-2 mb-1">
               <span className="font-medium">{t('insert_symbol')}</span>
               {physicsSymbols.map(s => (
-                <button type="button" key={s.symbol} className="px-2 py-1 rounded hover:bg-blue-100 text-lg" onClick={() => setManualExplanation(manualExplanation + s.symbol)} title={s.label}>{s.symbol}</button>
+                <button type="button" key={s.symbol} className="px-2 py-1 rounded transition hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-blue-600 dark:hover:text-blue-300 text-lg" onClick={() => setManualExplanation(manualExplanation + s.symbol)} title={s.label}>{s.symbol}</button>
               ))}
             </div>
             <ReactQuill
@@ -1102,7 +1100,7 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
               <DialogTitle>Confirm Submission</DialogTitle>
             </DialogHeader>
             <div className="mb-4 text-center text-lg font-semibold">Are you sure you want to submit this information?</div>
-            <div className="mb-4 text-center text-sm text-gray-500">Once sent, it may not be editable.</div>
+            <div className="mb-4 text-center text-sm text-black dark:text-white">Once sent, it may not be editable.</div>
             <div className="flex justify-center gap-4 mt-6">
                 <Button
                   onClick={async () => {
@@ -1206,7 +1204,7 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
               <DialogTitle>Confirm Submission</DialogTitle>
             </DialogHeader>
             <div className="mb-4 text-center text-lg font-semibold">Are you sure you want to submit this information?</div>
-            <div className="mb-4 text-center text-sm text-gray-500">Once sent, it may not be editable.</div>
+            <div className="mb-4 text-center text-sm text-black dark:text-white">Once sent, it may not be editable.</div>
             <div className="flex justify-center gap-4 mt-6">
               <Button onClick={() => { setShowConfirmModal(false); setStep(10); }} className="bg-green-500 hover:bg-green-600">Confirm</Button>
               <Button onClick={() => setShowConfirmModal(false)} className="bg-red-500 hover:bg-red-600">Back</Button>

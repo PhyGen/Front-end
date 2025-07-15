@@ -8,8 +8,6 @@ import loadingGif from '@/assets/icons/loading.gif';
 const AdminAccount = () => {
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [adding, setAdding] = useState(false);
-  const [newAccount, setNewAccount] = useState({ fullName: '', email: '', password: '', roleId: '1' });
   const [editId, setEditId] = useState(null);
   const [editAccount, setEditAccount] = useState({ fullName: '', email: '', roleId: '1' });
   const [saving, setSaving] = useState(false);
@@ -28,10 +26,9 @@ const AdminAccount = () => {
     fetchAccounts();
   }, [search]);
 
-  const handleAdd = () => {
-    setAdding(true);
-    setNewAccount({ fullName: '', email: '', password: '', roleId: '1' });
-  };
+  // XÓA các state và hàm liên quan đến thêm tài khoản
+  // XÓA: adding, setAdding, newAccount, setNewAccount, handleAdd, handleCreate
+  // XÓA UI: nút 'Thêm tài khoản', phần render thêm tài khoản (adding && ...)
 
   const SECRET_KEY = "trideptraivcl"; // Secret key do backend cung cấp
   // Thử các format khác nhau của secret key
@@ -42,78 +39,6 @@ const AdminAccount = () => {
     "trideptraivcl123",
     "admin_secret_key"
   ];
-
-  const handleCreate = async () => {
-    if (!newAccount.fullName || !newAccount.email || !newAccount.password) return;
-    setSaving(true);
-    try {
-      // 1. Đăng ký user mới
-      await api.post('/signup', {
-        email: newAccount.email,
-        password: newAccount.password,
-        name: newAccount.fullName
-      });
-
-      // 2. Fetch lại danh sách user để lấy userId
-      const res = await api.get('/users', { params: { search: newAccount.email } });
-      let createdUser = null;
-      if (Array.isArray(res.data)) {
-        createdUser = res.data.find(u => u.email === newAccount.email);
-      } else if (res.data.items) {
-        createdUser = res.data.items.find(u => u.email === newAccount.email);
-      } else if (res.data) {
-        createdUser = res.data.find(u => u.email === newAccount.email);
-      }
-
-      // 3. Gọi API set role nếu có chọn role
-      if (createdUser && newAccount.roleId) {
-        let roleName = 'user';
-        if (newAccount.roleId === '2') roleName = 'admin';
-        else if (newAccount.roleId === '3') roleName = 'moderator';
-        
-        console.log('Setting role for user:', {
-          userId: createdUser.id,
-          roleName: roleName,
-          secretKey: SECRET_KEY
-        });
-        
-        // Thử với các secret key khác nhau
-        let roleUpdated = false;
-        for (const secretKey of SECRET_KEYS) {
-          try {
-            console.log(`Trying secret key: ${secretKey}`);
-            const roleResponse = await api.post('/signup/role', {
-              userId: createdUser.id,
-              roleName: roleName,
-              secretKey: secretKey
-            });
-            console.log('Role update response:', roleResponse.data);
-            roleUpdated = true;
-            break;
-          } catch (roleError) {
-            console.error(`Role update error with secret key "${secretKey}":`, roleError.response?.data || roleError.message);
-            if (roleError.response?.status === 400 && roleError.response?.data?.message === "Invalid secret key") {
-              continue; // Thử secret key tiếp theo
-            } else {
-              throw roleError; // Lỗi khác, dừng lại
-            }
-          }
-        }
-        
-        if (!roleUpdated) {
-          console.error('All secret keys failed');
-          alert('Không thể cập nhật role. Vui lòng kiểm tra secret key.');
-        }
-      }
-
-      setAdding(false);
-      fetchAccounts();
-    } catch {
-      alert('Tạo tài khoản hoặc set role thất bại!');
-    } finally {
-      setSaving(false);
-    }
-  };
 
   const handleEdit = (acc) => {
     setEditId(acc.id);
@@ -207,7 +132,7 @@ const AdminAccount = () => {
       <CardContent>
         <div className="mb-4 flex gap-2 items-center">
           <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Tìm kiếm tên/email..." className="w-64" />
-          <Button onClick={handleAdd} className="bg-blue-500 text-white">Thêm tài khoản</Button>
+          {/* XÓA nút 'Thêm tài khoản' */}
         </div>
         {loading ? (
           <div className="flex justify-center items-center h-24">
@@ -267,30 +192,7 @@ const AdminAccount = () => {
                   </tr>
                 )
               ))}
-              {adding && (
-                <tr className="bg-green-50">
-                  <td className="px-4 py-2 border">#</td>
-                  <td className="px-4 py-2 border">
-                    <Input value={newAccount.fullName} onChange={e => setNewAccount(a => ({ ...a, fullName: e.target.value }))} placeholder="Họ tên" />
-                  </td>
-                  <td className="px-4 py-2 border">
-                    <Input value={newAccount.email} onChange={e => setNewAccount(a => ({ ...a, email: e.target.value }))} placeholder="Email" />
-                  </td>
-                  <td className="px-4 py-2 border">
-                    <select value={newAccount.roleId} onChange={e => setNewAccount(a => ({ ...a, roleId: e.target.value }))} className="border rounded px-2 py-1">
-                      <option value="1">User</option>
-                      <option value="2">Admin</option>
-                      <option value="3">Mod</option>
-                    </select>
-                  </td>
-                  <td className="px-4 py-2 border">-</td>
-                  <td className="px-4 py-2 border flex gap-2">
-                    <Input value={newAccount.password} onChange={e => setNewAccount(a => ({ ...a, password: e.target.value }))} placeholder="Mật khẩu" type="password" />
-                    <Button size="sm" className="bg-blue-500 text-white" onClick={handleCreate} disabled={saving}>Tạo</Button>
-                    <Button size="sm" className="bg-gray-400 text-white" onClick={() => setAdding(false)} disabled={saving}>Hủy</Button>
-                  </td>
-                </tr>
-              )}
+              {/* XÓA phần render thêm tài khoản */}
             </tbody>
           </table>
         )}

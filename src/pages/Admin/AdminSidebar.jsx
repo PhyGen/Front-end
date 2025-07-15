@@ -6,6 +6,7 @@ const sidebarItems = [
   { key: 'semester', label: 'Semester' },
   { key: 'chapter', label: 'Chapter' },
   { key: 'lesson', label: 'Lesson' },
+  { key: 'textbook', label: 'Textbook' },
   { key: 'question', label: 'Question' },
   { key: 'setting', label: 'Setting' },
 
