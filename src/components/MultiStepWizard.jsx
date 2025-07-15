@@ -158,6 +158,7 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
   const [ocrResult, setOcrResult] = useState(null);
   const [ocrError, setOcrError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [ocrLanguage, setOcrLanguage] = useState('eng+vie');
 
   // State cho flow exam
   const [examType, setExamType] = useState(null);
@@ -251,11 +252,11 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
     const file = e.target.files[0];
     if (file && file.type.startsWith('image/')) {
       setAiImage(file);
-      handleImage(file);
+      handleImage(file, ocrLanguage);
     }
   }
 
-  const handleImage = async (file) => {
+  const handleImage = async (file, language = ocrLanguage) => {
     try {
       setIsProcessingOCR(true);
       setOcrError(null);
@@ -264,7 +265,7 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
       console.log('🖼️ Starting OCR processing for file:', file.name);
       
       // Sử dụng advanced OCR processing
-      const result = await ocrService.processImageAdvanced(file);
+      const result = await ocrService.processImageAdvanced(file, language);
       
       if (result.success) {
         console.log('✅ OCR completed successfully:', result);
