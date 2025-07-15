@@ -20,14 +20,14 @@ import HandPointer from '@/assets/icons/hand-pointer-event-line-svgrepo-com.svg'
 import AIIcon from '@/assets/icons/ai-svgrepo-com.svg';
 import { Textarea } from '@/components/ui/textarea';
 import { Input as ShadInput } from '@/components/ui/input';
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
 import { Upload } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import ocrService from '@/config/OCRService';
 import OCRResultDisplay from './OCRResultDisplay';
 import { AuthContext } from '@/context/AuthContext';
 import * as RadixDialog from '@radix-ui/react-dialog';
+import TiptapEditor from './TiptapEditor';
+import MathRenderer from '@/components/MathRenderer';
 
 
 const stepsQuestion = [
@@ -696,7 +696,7 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
                 const question = examQuestionsList.find(q => q.id === qid);
                 return (
                   <div key={qid} className="flex items-center gap-2 border-b py-2 last:border-b-0">
-                    <span>{question?.content}</span>
+                    <span><MathRenderer latex={question?.content} /></span>
                     <Button size="sm" variant="outline" className="bg-red-600 text-white  hover:bg-red-700 hover:text-white" onClick={() => setSelectedExamQuestions(prev => prev.filter(id => id !== qid))}>Remove</Button>
                   </div>
                 );
@@ -787,7 +787,7 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
                     else setSelectedExamQuestions(prev => prev.filter(id => id !== q.id));
                   }}
                 />
-                <span>{q.content}</span>
+                <span><MathRenderer latex={q.content} /></span>
               </div>
             ))}
           </div>
@@ -859,18 +859,18 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
                   >
                     <div className="font-bold mr-2">Câu hỏi {index + 1}</div>
                     <span className="text-blue-500">{isOpen ? "▲" : "▼"}</span>
-                    <span className="ml-2">{q?.content?.slice(0, 40)}...</span>
+                    <span className="ml-2"><MathRenderer latex={q?.content} /></span>
                   </div>
                   {isOpen && (
                     <div className="pl-4 mt-2">
                       <div className="mb-2">Nội dung: <span className="prose" dangerouslySetInnerHTML={{ __html: q?.content || '...' }} /></div>
                       <div className="bg-green-50 p-3 rounded mb-2">
                         <div className="font-semibold">Solution:</div>
-                        <div>{solutionObj?.content || <span className="italic text-gray-400">Chưa có lời giải</span>}</div>
+                        <div>{solutionObj?.content ? <MathRenderer latex={solutionObj.content} /> : <span className="italic text-gray-400">Chưa có lời giải</span>}</div>
                       </div>
                       <div className="bg-blue-50 p-3 rounded">
                         <div className="font-semibold">Explanation:</div>
-                        <div>{solutionObj?.explanation || <span className="italic text-gray-400">Chưa có giải thích</span>}</div>
+                        <div>{solutionObj?.explanation ? <MathRenderer latex={solutionObj.explanation} /> : <span className="italic text-gray-400">Chưa có giải thích</span>}</div>
                       </div>
                     </div>
                   )}
@@ -1119,19 +1119,7 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
         <form className="space-y-6 max-w-2xl mx-auto">
           <div>
             <label className="block font-semibold mb-2">{t('question')}</label>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="font-medium">{t('insert_symbol')}</span>
-              {physicsSymbols.map(s => (
-                <button type="button" key={s.symbol} className="px-2 py-1 rounded transition hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-blue-600 dark:hover:text-blue-300 text-lg" onClick={() => setManualQuestion(manualQuestion + s.symbol)} title={s.label}>{s.symbol}</button>
-              ))}
-            </div>
-            <ReactQuill
-              value={manualQuestion}
-              onChange={setManualQuestion}
-              modules={quillModules}
-              theme="snow"
-              style={{ background: 'white', color: 'black' }}
-            />
+            <TiptapEditor value={manualQuestion} onChange={setManualQuestion} placeholder="Nhập câu hỏi..." />
           </div>
           <div>
             <label className="block font-semibold mb-2">{t('question_source')}</label>
@@ -1144,35 +1132,11 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
           </div>
           <div>
             <label className="block font-semibold mb-2">{t('solution')}</label>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="font-medium">{t('insert_symbol')}</span>
-              {physicsSymbols.map(s => (
-                <button type="button" key={s.symbol} className="px-2 py-1 rounded transition hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-blue-600 dark:hover:text-blue-300 text-lg" onClick={() => setManualSolution(manualSolution + s.symbol)} title={s.label}>{s.symbol}</button>
-              ))}
-            </div>
-            <ReactQuill
-              value={manualSolution}
-              onChange={setManualSolution}
-              modules={quillModules}
-              theme="snow"
-              style={{ background: 'white', color: 'black' }}
-            />
+            <TiptapEditor value={manualSolution} onChange={setManualSolution} placeholder="Nhập lời giải..." />
           </div>
           <div>
             <label className="block font-semibold mb-2">{t('explanation')}</label>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="font-medium">{t('insert_symbol')}</span>
-              {physicsSymbols.map(s => (
-                <button type="button" key={s.symbol} className="px-2 py-1 rounded transition hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-blue-600 dark:hover:text-blue-300 text-lg" onClick={() => setManualExplanation(manualExplanation + s.symbol)} title={s.label}>{s.symbol}</button>
-              ))}
-            </div>
-            <ReactQuill
-              value={manualExplanation}
-              onChange={setManualExplanation}
-              modules={quillModules}
-              theme="snow"
-              style={{ background: 'white', color: 'black' }}
-            />
+            <TiptapEditor value={manualExplanation} onChange={setManualExplanation} placeholder="Nhập giải thích..." />
           </div>
         </form>
         <div className="flex justify-between mt-8">
@@ -1210,7 +1174,7 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
           </div>
           <div className="mb-4">
             <div className="font-bold mb-1">{t('question')}:</div>
-            <div className="prose" dangerouslySetInnerHTML={{ __html: manualQuestion}} />
+            <div className="prose"><MathRenderer latex={manualQuestion} /></div>
           </div>
           <div className="mb-4">
             <div className="font-bold mb-1">{t('question_source')}:</div>
@@ -1218,11 +1182,11 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
           </div>
           <div className="mb-4">
             <div className="font-bold mb-1">{t('solution')}:</div>
-            <div className="prose" dangerouslySetInnerHTML={{ __html: manualSolution }} />
+            <div className="prose"><MathRenderer latex={manualSolution} /></div>
           </div>
           <div>
             <div className="font-bold mb-1">{t('explanation')}:</div>
-            <div className="prose" dangerouslySetInnerHTML={{ __html: manualExplanation }} />
+            <div className="prose"><MathRenderer latex={manualExplanation} /></div>
           </div>
         </div>
         <div className="flex justify-between mt-8">
