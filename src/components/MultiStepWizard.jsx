@@ -27,7 +27,7 @@ import OCRResultDisplay from './OCRResultDisplay';
 import { AuthContext } from '@/context/AuthContext';
 import * as RadixDialog from '@radix-ui/react-dialog';
 import TiptapEditor from './TiptapEditor';
-import MathRenderer from '@/components/MathRenderer';
+import RichTextRenderer from './RichTextRenderer';
 
 
 const stepsQuestion = [
@@ -696,7 +696,7 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
                 const question = examQuestionsList.find(q => q.id === qid);
                 return (
                   <div key={qid} className="flex items-center gap-2 border-b py-2 last:border-b-0">
-                    <span><MathRenderer latex={question?.content} /></span>
+                    <span><RichTextRenderer html={question?.content} /></span>
                     <Button size="sm" variant="outline" className="bg-red-600 text-white  hover:bg-red-700 hover:text-white" onClick={() => setSelectedExamQuestions(prev => prev.filter(id => id !== qid))}>Remove</Button>
                   </div>
                 );
@@ -787,7 +787,7 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
                     else setSelectedExamQuestions(prev => prev.filter(id => id !== q.id));
                   }}
                 />
-                <span><MathRenderer latex={q.content} /></span>
+                <span><RichTextRenderer html={q.content} /></span>
               </div>
             ))}
           </div>
@@ -859,18 +859,18 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
                   >
                     <div className="font-bold mr-2">Câu hỏi {index + 1}</div>
                     <span className="text-blue-500">{isOpen ? "▲" : "▼"}</span>
-                    <span className="ml-2"><MathRenderer latex={q?.content} /></span>
+                    <span className="ml-2"><RichTextRenderer html={q?.content} /></span>
                   </div>
                   {isOpen && (
                     <div className="pl-4 mt-2">
                       <div className="mb-2">Nội dung: <span className="prose" dangerouslySetInnerHTML={{ __html: q?.content || '...' }} /></div>
                       <div className="bg-green-50 p-3 rounded mb-2">
                         <div className="font-semibold">Solution:</div>
-                        <div>{solutionObj?.content ? <MathRenderer latex={solutionObj.content} /> : <span className="italic text-gray-400">Chưa có lời giải</span>}</div>
+                        <div>{solutionObj?.content ? <RichTextRenderer html={solutionObj.content} /> : <span className="italic text-gray-400">Chưa có lời giải</span>}</div>
                       </div>
                       <div className="bg-blue-50 p-3 rounded">
                         <div className="font-semibold">Explanation:</div>
-                        <div>{solutionObj?.explanation ? <MathRenderer latex={solutionObj.explanation} /> : <span className="italic text-gray-400">Chưa có giải thích</span>}</div>
+                        <div>{solutionObj?.explanation ? <RichTextRenderer html={solutionObj.explanation} /> : <span className="italic text-gray-400">Chưa có giải thích</span>}</div>
                       </div>
                     </div>
                   )}
@@ -1174,7 +1174,7 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
           </div>
           <div className="mb-4">
             <div className="font-bold mb-1">{t('question')}:</div>
-            <div className="prose"><MathRenderer latex={manualQuestion} /></div>
+            <RichTextRenderer html={manualQuestion} />
           </div>
           <div className="mb-4">
             <div className="font-bold mb-1">{t('question_source')}:</div>
@@ -1182,11 +1182,11 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
           </div>
           <div className="mb-4">
             <div className="font-bold mb-1">{t('solution')}:</div>
-            <div className="prose"><MathRenderer latex={manualSolution} /></div>
+            <RichTextRenderer html={manualSolution} />
           </div>
           <div>
             <div className="font-bold mb-1">{t('explanation')}:</div>
-            <div className="prose"><MathRenderer latex={manualExplanation} /></div>
+            <RichTextRenderer html={manualExplanation} />
           </div>
         </div>
         <div className="flex justify-between mt-8">
