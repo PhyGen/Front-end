@@ -17,8 +17,30 @@ import 'katex/dist/katex.min.css';
 import { MathfieldElement } from 'mathlive';
 import { Node } from '@tiptap/core';
 import { TextStyle } from '@tiptap/extension-text-style';
+import { ReactNodeViewRenderer, NodeViewWrapper } from '@tiptap/react';
 
 // Custom math extension
+const MathInlineComponent = (props) => {
+  const { node, selected } = props;
+  const latex = node.attrs.value || '';
+  return (
+    <NodeViewWrapper
+      as="span"
+      data-math-inline=""
+      style={{
+        background: '#f0f0f0',
+        padding: '2px 4px',
+        borderRadius: 3,
+        outline: selected ? '2px solid #2563eb' : 'none'
+      }}
+    >
+      <span
+        dangerouslySetInnerHTML={{ __html: katex.renderToString(latex, { throwOnError: false }) }}
+      />
+    </NodeViewWrapper>
+  );
+};
+
 const MathInline = Node.create({
   name: 'mathInline',
   group: 'inline',
@@ -33,11 +55,11 @@ const MathInline = Node.create({
     return [{ tag: 'span[data-math-inline]' }];
   },
   renderHTML({ HTMLAttributes }) {
-    return [
-      'span',
-      { ...HTMLAttributes, 'data-math-inline': '', style: 'background: #f0f0f0; padding: 2px 4px; border-radius: 3px;' },
-      katex.renderToString(HTMLAttributes.value || '', { throwOnError: false }),
-    ];
+    // Không render KaTeX HTML vào content, chỉ tag đơn giản, KHÔNG có content hole
+    return ['span', { ...HTMLAttributes, 'data-math-inline': '', value: HTMLAttributes.value }];
+  },
+  addNodeView() {
+    return ReactNodeViewRenderer(MathInlineComponent);
   },
   addCommands() {
     return {
@@ -70,6 +92,8 @@ export default function TiptapEditor({ value, onChange, placeholder }) {
   const [linkUrl, setLinkUrl] = useState('');
   const [showBgColorInput, setShowBgColorInput] = useState(false);
   const [bgColor, setBgColor] = useState('#ffff00');
+  const [linkAnchor, setLinkAnchor] = useState('');
+  const [editingLink, setEditingLink] = useState(false);
 
   const lowlight = createLowlight(common);
   const editor = useEditor({
@@ -77,9 +101,8 @@ export default function TiptapEditor({ value, onChange, placeholder }) {
       StarterKit,
       Underline,
       Strike,
-      TextStyle,
-      TextAlign.configure({ types: ['heading', 'paragraph'] }),
-      Color,
+      TextStyle, // Đảm bảo đứng trước Color
+      Color.configure({ types: ['textStyle'] }),
       Highlight,
       Link.configure({ openOnClick: false }),
       Image,
@@ -96,7 +119,6 @@ export default function TiptapEditor({ value, onChange, placeholder }) {
   const handleInsertMath = () => {
     if (mathValue && editor) {
       editor.chain().focus().setMathInline(mathValue).run();
-      onChange(mathValue); // Truyền chuỗi LaTeX gốc ra ngoài
       setShowMath(false);
       setMathValue('');
     }
@@ -110,12 +132,22 @@ export default function TiptapEditor({ value, onChange, placeholder }) {
     }
   };
 
-  const handleInsertLink = () => {
-    if (linkUrl && editor) {
-      editor.chain().focus().extendMarkRange('link').setLink({ href: linkUrl }).run();
-      setShowLinkInput(false);
+  const handleShowLinkInput = () => {
+    if (!editor) return;
+    const { state } = editor;
+    const { from, to } = state.selection;
+    const selectedText = state.doc.textBetween(from, to, ' ');
+    const linkMark = editor.getAttributes('link');
+    if (editor.isActive('link')) {
+      setLinkUrl(linkMark.href || '');
+      setLinkAnchor(selectedText || linkMark.href || '');
+      setEditingLink(true);
+    } else {
       setLinkUrl('');
+      setLinkAnchor(selectedText || '');
+      setEditingLink(false);
     }
+    setShowLinkInput(true);
   };
 
   useEffect(() => {
@@ -154,27 +186,8 @@ export default function TiptapEditor({ value, onChange, placeholder }) {
           <ToolbarButton onClick={() => editor.chain().focus().setTextAlign('left').run()} active={editor.isActive({ textAlign: 'left' })} title="Căn trái">⬅</ToolbarButton>
           <ToolbarButton onClick={() => editor.chain().focus().setTextAlign('center').run()} active={editor.isActive({ textAlign: 'center' })} title="Căn giữa">↔</ToolbarButton>
           <ToolbarButton onClick={() => editor.chain().focus().setTextAlign('right').run()} active={editor.isActive({ textAlign: 'right' })} title="Căn phải">➡</ToolbarButton>
-          <ToolbarButton onClick={() => setShowLinkInput(true)} active={editor.isActive('link')} title="Chèn link">🔗</ToolbarButton>
-          <ToolbarButton onClick={() => setShowImageInput(true)} title="Chèn ảnh">🖼️</ToolbarButton>
+          <ToolbarButton onClick={handleShowLinkInput} active={editor.isActive('link')} title="Chèn link">🔗</ToolbarButton>
           <ToolbarButton onClick={() => setShowMath(true)} title="Chèn công thức toán học">Σ</ToolbarButton>
-          <input type="color" title="Màu chữ" style={{ width: 24, height: 24, border: 'none', background: 'transparent', marginLeft: 4 }} onChange={e => editor.chain().focus().setColor(e.target.value).run()} />
-          <button type="button" title="Màu nền (Highlight)" style={{ width: 24, height: 24, border: 'none', background: 'transparent', marginLeft: 4 }} onClick={() => setShowBgColorInput(v => !v)}>
-            <span style={{ display: 'inline-block', width: 18, height: 18, background: bgColor, border: '1px solid #ccc', borderRadius: 3 }}></span>
-          </button>
-          {showBgColorInput && (
-            <input
-              type="color"
-              value={bgColor}
-              style={{ position: 'absolute', zIndex: 1000, marginLeft: 4 }}
-              onChange={e => {
-                setBgColor(e.target.value);
-                editor.chain().focus().toggleHighlight({ color: e.target.value }).run();
-                setShowBgColorInput(false);
-              }}
-              onBlur={() => setShowBgColorInput(false)}
-              autoFocus
-            />
-          )}
         </div>
       )}
 
@@ -204,17 +217,72 @@ export default function TiptapEditor({ value, onChange, placeholder }) {
       {showLinkInput && (
         <div className="fixed inset-0 bg-black bg-opacity-20 z-50 flex items-center justify-center" onMouseDown={e => e.target === e.currentTarget && setShowLinkInput(false)}>
           <div className="bg-white rounded-lg p-6 w-96">
-            <h3 className="font-bold mb-4">Chèn liên kết</h3>
+            <h3 className="font-bold mb-4">{editingLink ? 'Sửa liên kết' : 'Chèn liên kết'}</h3>
+            <input
+              type="text"
+              className="border rounded px-2 py-1 w-full mb-2"
+              placeholder="Văn bản hiển thị"
+              value={linkAnchor}
+              onChange={e => setLinkAnchor(e.target.value)}
+              autoFocus
+            />
             <input
               type="text"
               className="border rounded px-2 py-1 w-full mb-4"
               placeholder="Nhập URL..."
               value={linkUrl}
               onChange={e => setLinkUrl(e.target.value)}
-              autoFocus
             />
             <div className="flex gap-2">
-              <button type="button" onClick={handleInsertLink} className="bg-blue-500 text-white px-4 py-2 rounded">Chèn</button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!linkUrl) return;
+                  if (editor.state.selection.empty) {
+                    // Không có selection, chèn anchor mới
+                    const anchor = linkAnchor || linkUrl;
+                    const pos = editor.state.selection.from;
+                    editor.chain().focus()
+                      .insertContent({
+                        type: 'text',
+                        text: anchor,
+                        marks: [{ type: 'link', attrs: { href: linkUrl } }]
+                      })
+                      .setTextSelection(pos + anchor.length) // Đặt con trỏ sau anchor text
+                      .run();
+                  } else {
+                    // Có selection, thay thế hoặc cập nhật
+                    const { from, to } = editor.state.selection;
+                    editor.chain().focus()
+                      .extendMarkRange('link')
+                      .setLink({ href: linkUrl })
+                      .setTextSelection(to) // Đặt con trỏ sau selection
+                      .run();
+                    if (linkAnchor && linkAnchor !== editor.state.doc.textBetween(from, to, ' ')) {
+                      editor.chain().focus()
+                        .insertContent(linkAnchor)
+                        .setTextSelection(from + linkAnchor.length)
+                        .run();
+                    }
+                  }
+                  setShowLinkInput(false);
+                }}
+                className="bg-blue-500 text-white px-4 py-2 rounded"
+              >
+                {editingLink ? 'Cập nhật' : 'Chèn'}
+              </button>
+              {editingLink && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    editor.chain().focus().unsetLink().run();
+                    setShowLinkInput(false);
+                  }}
+                  className="bg-red-500 text-white px-4 py-2 rounded"
+                >
+                  Bỏ liên kết
+                </button>
+              )}
               <button type="button" onClick={() => setShowLinkInput(false)} className="bg-gray-300 px-4 py-2 rounded">Hủy</button>
             </div>
           </div>
@@ -248,6 +316,16 @@ export default function TiptapEditor({ value, onChange, placeholder }) {
           outline: none !important;
           box-shadow: none !important;
           background: transparent !important;
+        }
+        .tiptap-editor .ProseMirror a {
+          color: #2563eb;
+          text-decoration: underline;
+          cursor: pointer;
+          transition: color 0.2s;
+        }
+        .tiptap-editor .ProseMirror a:hover {
+          color: #1d4ed8;
+          text-decoration: underline;
         }
         .mathfield-container {
           width: 100%;
