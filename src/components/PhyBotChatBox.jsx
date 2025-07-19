@@ -40,7 +40,7 @@ const PhyBotChatBox = () => {
 
     // Gửi message đến backend
     try {
-      const res = await api.post('/deepseek/solve', { message: input });
+      const res = await api.post('/gemini-25/chat', { message: input });
       const botReply = res.data?.reply || "Xin lỗi, tôi chưa hiểu ý bạn.";
       setMessages(prev => [
         ...prev,
