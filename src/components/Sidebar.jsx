@@ -26,6 +26,7 @@ const Sidebar = ({ activeKey, onSelect }) => {
     { key: 'starred', label: t('starred'), icon: Star },
     { key: 'spam', label: t('spam_content'), icon: AlertTriangle },
     { key: 'trash', label: t('trash_can'), icon: Trash2 },
+    { key: 'pgvideo', label: 'PGVideo', icon: Bot }, // Thêm mục mới
   ];
 
   return (
