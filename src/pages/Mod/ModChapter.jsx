@@ -119,19 +119,6 @@ const ModChapter = () => {
       <CardContent>
         <div className="mb-4 flex gap-2 items-center">
           <Input value={newChapter.name} onChange={e => setNewChapter(s => ({ ...s, name: e.target.value }))} placeholder="Tên chương mới" />
-          <Select value={newChapter.semesterId} onValueChange={v => setNewChapter(s => ({ ...s, semesterId: v }))}>
-            <SelectTrigger className="w-32"><SelectValue placeholder="Chọn học kỳ" /></SelectTrigger>
-            <SelectContent>
-              {semesters.map(s => {
-                const grade = grades.find(g => g.id === s.gradeId);
-                return (
-                  <SelectItem key={s.id} value={s.id.toString()}>
-                    {s.name}-Lớp{grade ? grade.name : '-'}
-                  </SelectItem>
-                );
-              })}
-            </SelectContent>
-          </Select>
           <Button onClick={handleAdd} className="flex items-center gap-1 bg-black hover:bg-neutral-800 text-white">
             <img src={AddIcon} alt="add" className="w-4 h-4" />
             Thêm
@@ -169,19 +156,11 @@ const ModChapter = () => {
                             <Input value={editRow.name} onChange={e => setEditRow(r => ({ ...r, name: e.target.value }))} placeholder="Nhập tên chương" />
                           </td>
                           <td className="px-4 py-2 border">
-                            <Select value={editRow.semesterId} onValueChange={v => setEditRow(r => ({ ...r, semesterId: v }))}>
-                              <SelectTrigger className="w-32"><SelectValue placeholder="Chọn học kỳ" /></SelectTrigger>
-                              <SelectContent>
-                                {semesters.map(s => {
-                                  const grade = grades.find(g => g.id === s.gradeId);
-                                  return (
-                                    <SelectItem key={s.id} value={s.id.toString()}>
-                                      {s.name}-Lớp{grade ? grade.name : '-'}
-                                    </SelectItem>
-                                  );
-                                })}
-                              </SelectContent>
-                            </Select>
+                          {(() => {
+                          const semester = semesters.find(s => s.id === editRow.semesterId);
+                          const grade = semester ? grades.find(g => g.id === semester.gradeId) : null;
+                          return semester ? `${semester.name} - Lớp ${semester.gradeName || "-"}` : '-';
+                          })()}
                           </td>
                           <td className="px-4 py-2 border">{formatDate(c.createdAt)}</td>
                           <td className="px-4 py-2 border">{formatDate(c.updatedAt)}</td>
@@ -196,7 +175,7 @@ const ModChapter = () => {
                       <tr key={c.id} className="even:bg-slate-50">
                         <td className="px-4 py-2 border">{c.id}</td>
                         <td className="px-4 py-2 border">{c.name}</td>
-                        <td className="px-4 py-2 border">{semester ? semester.name : c.semesterId}-Lớp{grade ? grade.name : '-'}</td>
+                        <td className="px-4 py-2 border">{semester.name} - Lớp {semester.gradeName || "-"}</td>
                         <td className="px-4 py-2 border">{formatDate(c.createdAt)}</td>
                         <td className="px-4 py-2 border">{formatDate(c.updatedAt)}</td>
                         <td className="px-4 py-2 border flex gap-2">

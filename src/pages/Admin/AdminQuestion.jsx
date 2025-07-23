@@ -70,6 +70,7 @@ const AdminQuestion = () => {
       }
     })
       .then(res => {
+        console.log("List Question",res.data.items)
         setQuestions(res.data.items || []);
         setTotalPages(res.data.totalPages || 1);
         setTotalItems(res.data.totalItems || 0);
@@ -186,7 +187,6 @@ const AdminQuestion = () => {
                   <th className="px-4 py-2 border-b">Id</th>
                   <th className="px-4 py-2 border-b">Question</th>
                   <th className="px-4 py-2 border-b">Lesson</th>
-                  <th className="px-4 py-2 border-b">Chapter</th>
                   <th className="px-4 py-2 border-b">Difficulty</th>
                   <th className="px-4 py-2 border-b">Created By</th>
                   <th className="px-4 py-2 border-b">Create At</th>
@@ -199,7 +199,6 @@ const AdminQuestion = () => {
                     <td className="px-4 py-2 border-b text-center">{row.id}</td>
                     <td className="px-4 py-2 border-b">{row.content}</td>
                     <td className="px-4 py-2 border-b">{row.lessonName}</td>
-                    <td className="px-4 py-2 border-b">{row.chapterId}</td>
                     <td className="px-4 py-2 border-b">{row.difficultyLevel}</td>
                     <td className="px-4 py-2 border-b">{row.createdByUserName}</td>
                     <td className="px-4 py-2 border-b">{formatDate(row.createdAt)}</td>
