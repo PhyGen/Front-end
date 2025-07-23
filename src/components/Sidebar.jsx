@@ -24,6 +24,7 @@ const Sidebar = ({ activeKey, onSelect }) => {
     { key: 'shared', label: t('shared_with_me'), icon: Share2 },
     { key: 'recent', label: t('recently'), icon: Clock },
     { key: 'trash', label: t('trash_can'), icon: Trash2 },
+    { key: 'pgvideo', label: 'PGVideo', icon: Bot }, // Thêm mục mới
   ];
 
   return (

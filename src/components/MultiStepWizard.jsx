@@ -10,7 +10,7 @@ import avatarIcon from '@/assets/icons/avatar.jpg';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem,DropdownMenuRadioItem,DropdownMenuRadioGroup } from '@/components/ui/dropdown-menu';
 import api from '@/config/axios';
 import { decodeBase64Id } from '@/config/Base64Decode';
 import KNTT from '@/assets/icons/KNTT.png';
@@ -28,7 +28,8 @@ import { AuthContext } from '@/context/AuthContext';
 import * as RadixDialog from '@radix-ui/react-dialog';
 import TiptapEditor from './TiptapEditor';
 import RichTextRenderer from './RichTextRenderer';
-
+import pdfIcon from '@/assets/icons/pdf-icon.svg';
+import wordIcon from '@/assets/icons/word-icon.svg';
 
 const stepsQuestion = [
   { label: 'Grade Level' },
@@ -166,9 +167,11 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
   const [modalChapters, setModalChapters] = useState([]);
   const [modalLessons, setModalLessons] = useState([]);
 
-  // Thêm useState cho searchModalOpen
-  const [searchModalOpen, setSearchModalOpen] = useState(false);
 
+  const [searchModalOpen, setSearchModalOpen] = useState(false);
+  const [examFormat, setExamFormat] = useState('word');
+  const [currentPage, setCurrentPage] = useState(1);
+  const questionsPerPage = 5;
   // Khi chọn filterExamChapter, gọi API lấy lessons cho modal
   useEffect(() => {
     if (!filterExamChapter) {
@@ -550,35 +553,12 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
 
   // Hàm tạo exam và gán câu hỏi vào exam
   const handleCreateExam = async () => {
-    // Lấy lessonId từ câu hỏi đầu tiên nếu chưa có lesson
-    let lessonId = lesson;
-    if (!lessonId && selectedExamQuestions.length > 0) {
-      const firstQuestion = examQuestionsList.find(q => q.id === selectedExamQuestions[0]);
-      if (firstQuestion?.lessonId) {
-        lessonId = firstQuestion.lessonId;
-        console.log('📚 Using lessonId from first question:', lessonId);
-      } else {
-        // Fallback: sử dụng lesson đầu tiên từ danh sách lessons
-        if (lessons.length > 0) {
-          lessonId = lessons[0].id;
-          console.log('📚 Using first available lesson as fallback:', lessonId);
-        }
-      }
-    }
-    
-    // Fallback cuối cùng: sử dụng lessonId = 1 nếu không tìm thấy
-    if (!lessonId) {
-      lessonId = 1;
-      console.log('📚 Using default lessonId = 1 as final fallback');
-    }
-    
-    // Kiểm tra validation
-    if (!examName || !lessonId || !examType || !user?.id || selectedExamQuestions.length === 0) {
-      console.log("Exam name", examName);
-      console.log("lessonId", lessonId);
-      console.log("examType", examType);
-      console.log("user?.id", user?.id);
-      console.log("selectedExamQuestions.length", selectedExamQuestions.length);
+    setLesson(1);
+    if (!examName || !examType || !user?.id || selectedExamQuestions.length === 0) {
+      console.log("Exam name",examName);
+      console.log("Exam name",examType);
+      console.log("Exam name",user?.id);
+      console.log("Độ dài bài kiểm tra có bằng 0 hay không",selectedExamQuestions.length === 0);
       throw new Error('Thiếu thông tin để tạo bài kiểm tra');
     }
     
@@ -590,43 +570,16 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
       // 1. Tạo exam
       const examPayload = {
         name: examName,
-        lessonId: lessonId,
+        lessonId: 1,
         examTypeId: examTypeObj.id,
         createdByUserId: user.id,
       };
       
       console.log('📝 Creating exam with payload:', examPayload);
       const examRes = await api.post('/exams', examPayload);
-      console.log('📋 Exam creation response:', examRes.data);
-      
-      // Tìm examId từ response với nhiều format khác nhau
-      let examId = null;
-      if (examRes.data?.id) {
-        examId = examRes.data.id;
-      } else if (examRes.data?.examId) {
-        examId = examRes.data.examId;
-      } else if (examRes.data?.exam?.id) {
-        examId = examRes.data.exam.id;
-      } else if (examRes.data?.data?.id) {
-        examId = examRes.data.data.id;
-      } else if (typeof examRes.data === 'object' && Object.keys(examRes.data).length > 0) {
-        // Nếu response là object, tìm key có chứa 'id'
-        const keys = Object.keys(examRes.data);
-        for (const key of keys) {
-          if (key.toLowerCase().includes('id') && examRes.data[key]) {
-            examId = examRes.data[key];
-            break;
-          }
-        }
-      }
-      
-      if (!examId) {
-        console.error('❌ Không thể tìm thấy examId trong response:', examRes.data);
-        throw new Error('Không lấy được examId từ response');
-      }
-      
-      console.log('✅ Exam created successfully with ID:', examId);
-      
+      console.log("Đã tạo được vỏ exam",examRes);
+      const examId = examRes.data?.id || examRes.data?.examId || examRes.data?.exam?.id;
+      if (!examId) throw new Error('Không lấy được examId từ response');
       // 2. Gán câu hỏi vào exam
       const assignResults = [];
       for (let i = 0; i < selectedExamQuestions.length; i++) {
@@ -656,7 +609,7 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
   if (step === 0) {
       content = (
         <>
-          <div className="text-2xl font-semibold text-center mb-6">Chọn khối lớp cho bài kiểm tra</div>
+          <div className="text-2xl font-semibold text-center mb-6">{t('select_grade_level_for_exam')}</div>
           <div className="flex gap-8 justify-center mb-8">
             {gradeLevels.map((g) => (
               <Card
@@ -684,7 +637,7 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
     else if (step === 1) {
       content = (
         <>
-          <div className="text-2xl font-semibold text-center mb-6">Chọn học kỳ cho bài kiểm tra</div>
+          <div className="text-2xl font-semibold text-center mb-6">{t('select_semester_for_exam')}</div>
           <div className="flex gap-8 justify-center mb-8">
             {semesters.map((s) => (
               <Card
@@ -712,7 +665,7 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
     else if (step === 2) {
       content = (
         <>
-          <div className="text-2xl font-semibold text-center mb-6">Chọn loại bài kiểm tra</div>
+          <div className="text-2xl font-semibold text-center mb-6">{t('select_exam_type')}</div>
           <div className="flex gap-8 justify-center mb-8">
             {examTypes.map((et) => (
               <Card
@@ -741,14 +694,14 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
     else if (step === 3) {
       content = (
         <>
-          <div className="text-2xl font-semibold text-center mb-6">Chọn câu hỏi cho bài kiểm tra</div>
+          <div className="text-2xl font-semibold text-center mb-6">{t('select_questions_for_exam')}</div>
           <div className="mb-4 flex justify-center">
             <Button onClick={() => setSearchModalOpen(true)} className="bg-blue-500 hover:bg-blue-600">Search Question</Button>
           </div>
           <div className="mb-4">
-            <Label>Danh sách câu hỏi đã chọn:</Label>
+            <Label>{t('selected_question_list')}</Label>
             <div className="max-h-64 overflow-y-auto border rounded p-2 bg-slate-50">
-              {selectedExamQuestions.length === 0 && <div className="text-gray-400 italic">Chưa chọn câu hỏi nào</div>}
+              {selectedExamQuestions.length === 0 && <div className="text-gray-400 italic">{t('no_selected_questions')}</div>}
               {selectedExamQuestions.map(qid => {
                 const question = examQuestionsList.find(q => q.id === qid);
                 return (
@@ -771,7 +724,7 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
     <RadixDialog.Overlay className="fixed inset-0 bg-black/30 z-[9998]" />
     <RadixDialog.Content className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
       <div className="max-w-2xl w-full bg-white shadow-lg p-6 rounded-xl relative focus:outline-none">
-        <RadixDialog.Title className="text-xl font-bold mb-4">Tìm kiếm câu hỏi</RadixDialog.Title>
+        <RadixDialog.Title className="text-xl font-bold mb-4">{t('search_questions')}</RadixDialog.Title>
 
         <button
           className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl font-bold"
@@ -827,13 +780,13 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
         </div>
 
         <div className="mb-4">
-          <Button onClick={fetchSearchQuestionDialog}>Tìm kiếm</Button>
+          <Button onClick={fetchSearchQuestionDialog}>{t('search')}</Button>
         </div>
 
         <div className="mb-4">
           <Label>Danh sách câu hỏi:</Label>
           <div className="max-h-64 overflow-y-auto border rounded p-2 bg-slate-50">
-            {examQuestionsList.length === 0 && <div className="text-gray-400 italic">Không có câu hỏi nào</div>}
+            {examQuestionsList.length === 0 && <div className="text-gray-400 italic">{t('no_questions_found')}</div>}
             {examQuestionsList.map(q => (
               <div key={q.id} className="flex items-center gap-2 border-b py-2 last:border-b-0">
                 <input
@@ -851,8 +804,8 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
         </div>
 
         <div className="flex justify-end gap-2 mt-4">
-          <Button variant="outline" onClick={() => setSearchModalOpen(false)}>Đóng</Button>
-          <Button onClick={() => setSearchModalOpen(false)} className="bg-blue-500 hover:bg-blue-600">Xác nhận</Button>
+          <Button variant="outline" onClick={() => setSearchModalOpen(false)}>{t('close')}</Button>
+          <Button onClick={() => setSearchModalOpen(false)} className="bg-blue-500 hover:bg-blue-600">{t('confirm')}</Button>
         </div>
       </div>
     </RadixDialog.Content>
@@ -864,6 +817,12 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
     }
     // Step 4: Review
     else if (step === 4) {
+      // Phân trang câu hỏi
+      const totalQuestions = selectedExamQuestions.length;
+      const totalPages = Math.ceil(totalQuestions / questionsPerPage);
+      const startIdx = (currentPage - 1) * questionsPerPage;
+      const endIdx = startIdx + questionsPerPage;
+      const paginatedQuestions = selectedExamQuestions.slice(startIdx, endIdx);
       content = (
         <>
           <div className="text-2xl font-semibold text-center mb-6 ">
@@ -880,7 +839,7 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
                    Đóng tất cả
                  </Button>
                  <Button size="sm" variant="outline" onClick={() => setShowExamNameInput(true)}>
-                   Đặt tên bài kiểm tra
+                   {t('enter_exam_name')}
                  </Button>
                </div>
              )}
@@ -890,50 +849,67 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
                  <input
                    type="text"
                    className="border rounded px-2 py-1 flex-1"
-                   placeholder="Nhập tên bài kiểm tra..."
+                   placeholder={t('exam_name_placeholder')}
                    value={examName}
                    onChange={e => setExamName(e.target.value)}
                    autoFocus
                  />
                  <Button size="sm" onClick={() => setShowExamNameInput(false)}>
-                   Lưu
+                   {t('save')}
                  </Button>
                  <Button size="sm" variant="outline" onClick={() => setShowExamNameInput(false)}>
-                   Hủy
+                   {t('cancel')}
                  </Button>
                </div>
              )}
             {selectedExamQuestions.length === 0 && <div className="text-gray-400 italic">Chưa chọn câu hỏi nào</div>}
-            {selectedExamQuestions.map((qid, index) => {
+            {paginatedQuestions.map((qid, idx) => {
               const q = examQuestionsList.find(q => q.id === qid);
               const solutionObj = solutions.find(s => s.questionId === qid);
-              const isOpen = openIndexes.includes(index);
+              const globalIdx = startIdx + idx;
+              const isOpen = openIndexes.includes(globalIdx);
               return (
                 <div key={qid} className="mb-2 border-b pb-2 last:border-b-0">
                   <div
                     className="flex items-center cursor-pointer select-none"
-                    onClick={() => toggleOpen(index)}
+                    onClick={() => toggleOpen(globalIdx)}
                   >
-                    <div className="font-bold mr-2">Câu hỏi {index + 1}</div>
+                    <div className="font-bold mr-2">{t('question')} {globalIdx + 1} {q?.difficultyLevel}</div>
                     <span className="text-blue-500">{isOpen ? "▲" : "▼"}</span>
                     <span className="ml-2"><RichTextRenderer html={q?.content} /></span>
                   </div>
                   {isOpen && (
                     <div className="pl-4 mt-2">
-                      <div className="mb-2">Nội dung: <span className="prose" dangerouslySetInnerHTML={{ __html: q?.content || '...' }} /></div>
                       <div className="bg-green-50 p-3 rounded mb-2">
                         <div className="font-semibold">Solution:</div>
-                        <div>{solutionObj?.content ? <RichTextRenderer html={solutionObj.content} /> : <span className="italic text-gray-400">Chưa có lời giải</span>}</div>
+                        <div>{solutionObj?.content ? <RichTextRenderer html={solutionObj.content} /> : <span className="italic text-gray-400">{t('no_solution')}</span>}</div>
                       </div>
                       <div className="bg-blue-50 p-3 rounded">
                         <div className="font-semibold">Explanation:</div>
-                        <div>{solutionObj?.explanation ? <RichTextRenderer html={solutionObj.explanation} /> : <span className="italic text-gray-400">Chưa có giải thích</span>}</div>
+                        <div>{solutionObj?.explanation ? <RichTextRenderer html={solutionObj.explanation} /> : <span className="italic text-gray-400">{t('no_explanation')}</span>}</div>
                       </div>
                     </div>
                   )}
                 </div>
               );
             })}
+            {/* Pagination controls */}
+            {totalPages > 1 && (
+              <div className="flex justify-center gap-2 my-4">
+                <Button size="sm" variant="outline" disabled={currentPage === 1} onClick={() => setCurrentPage(currentPage - 1)}>Previous</Button>
+                {[...Array(totalPages)].map((_, i) => (
+                  <Button
+                    key={i}
+                    size="sm"
+                    variant={currentPage === i + 1 ? "default" : "outline"}
+                    onClick={() => setCurrentPage(i + 1)}
+                  >
+                    {i + 1}
+                  </Button>
+                ))}
+                <Button size="sm" variant="outline" disabled={currentPage === totalPages} onClick={() => setCurrentPage(currentPage + 1)}>Next</Button>
+              </div>
+            )}
           </div>
           <div className="flex justify-between mt-8">
             <Button onClick={() => setStep(3)} className="bg-blue-500 hover:bg-blue-600">Back</Button>
@@ -942,7 +918,7 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
               className="bg-green-500 hover:bg-green-600"
               disabled={!examName}
             >
-              Xác nhận tạo Exam
+              {t('confirm_create_exam')}
             </Button>
           </div>
           {/* Modal xác nhận gửi sử dụng ConfirmDialog */}
@@ -955,9 +931,7 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
                 const result = await handleCreateExam();
                 console.log('✅ Kết quả tạo exam:', result);
                 setShowConfirmModal(false);
-                // Hiển thị thông báo thành công
-                alert('🎉 Tạo bài kiểm tra thành công!');
-                setStep(10);
+                setStep(5);
               } catch (e) {
                 console.error('❌ Lỗi khi tạo exam:', e);
                 alert(`❌ Lỗi khi tạo bài kiểm tra: ${e.message}`);
@@ -974,6 +948,40 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
             cancelText="Back"
           />
         </>
+      );
+    }
+    // Step 5: Thank you (cảm ơn)
+    else if (step === 5) {
+      content = (
+        <div className="flex flex-col items-center justify-center min-h-[420px]">
+          <div className="flex flex-col items-center">
+            <div className="rounded-full bg-green-100 p-6 mb-4">
+              <svg width="80" height="80" viewBox="0 0 80 80">
+                <circle cx="40" cy="40" r="38" stroke="#4ade80" strokeWidth="4" fill="#f0fdf4" />
+                <polyline points="25,43 37,55 57,30" fill="none" stroke="#22c55e" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+            <h2 className="text-2xl font-bold text-green-600 mb-2">Thank you!</h2>
+            <p className="text-gray-600 mb-6">Your submission has been sent.</p>
+            <div className="flex gap-4">
+              <Button onClick={() => window.location.href = '/'} className="bg-blue-500 hover:bg-blue-600">Go Home</Button>
+              <Button onClick={() => {
+                // Reset wizard về bước đầu và các state liên quan
+                setGrade(null);
+                setSemester(null);
+                setChapter(null);
+                setLesson(null);
+                setDifficulty(0);
+                setExamType(null);
+                setSelectedExamQuestions([]);
+                setExamName('');
+                setShowExamNameInput(false);
+                setStep(0);
+                if (typeof onComplete === 'function') onComplete();
+              }} className="bg-green-500 hover:bg-green-600">Continue Create</Button>
+            </div>
+          </div>
+        </div>
       );
     }
   } else {
@@ -1192,11 +1200,11 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
           </div>
           <div>
             <label className="block font-semibold mb-2">{t('solution')}</label>
-            <TiptapEditor value={manualSolution} onChange={setManualSolution} placeholder="Nhập lời giải..." />
+            <TiptapEditor value={manualSolution} onChange={setManualSolution} placeholder={t('enter_solution')} />
           </div>
           <div>
             <label className="block font-semibold mb-2">{t('explanation')}</label>
-            <TiptapEditor value={manualExplanation} onChange={setManualExplanation} placeholder="Nhập giải thích..." />
+            <TiptapEditor value={manualExplanation} onChange={setManualExplanation} placeholder={t('enter_explanation')} />
           </div>
         </form>
         <div className="flex justify-between mt-8">
@@ -1412,7 +1420,7 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
   }
 
   return (
-    <Card className="max-w-2xl mx-auto mt-8 p-4">
+    <Card className="w-full max-w-5xl mx-auto mt-8 p-8">
       <CardHeader className="text-white font-semibold">
         <Stepper value={step} max={(type === 'exam' ? stepsExam.length : stepsQuestion.length) - 1} className="mb-6 text-white font-semibold">
           {( type === 'exam' ? stepsExam : stepsQuestion ).map((s, idx) => (
