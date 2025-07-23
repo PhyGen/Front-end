@@ -550,29 +550,83 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
 
   // Hàm tạo exam và gán câu hỏi vào exam
   const handleCreateExam = async () => {
-    setLesson(1);
-    if (!examName || !lesson || !examType || !user?.id || selectedExamQuestions.length === 0) {
-      console.log("Exam name",examName);
-      console.log("lesson",lesson);
-      console.log("Exam name",examType);
-      console.log("Exam name",user?.id);
-      console.log("Độ dài bài kiểm tra có bằng 0 hay không",selectedExamQuestions.length === 0);
+    // Lấy lessonId từ câu hỏi đầu tiên nếu chưa có lesson
+    let lessonId = lesson;
+    if (!lessonId && selectedExamQuestions.length > 0) {
+      const firstQuestion = examQuestionsList.find(q => q.id === selectedExamQuestions[0]);
+      if (firstQuestion?.lessonId) {
+        lessonId = firstQuestion.lessonId;
+        console.log('📚 Using lessonId from first question:', lessonId);
+      } else {
+        // Fallback: sử dụng lesson đầu tiên từ danh sách lessons
+        if (lessons.length > 0) {
+          lessonId = lessons[0].id;
+          console.log('📚 Using first available lesson as fallback:', lessonId);
+        }
+      }
+    }
+    
+    // Fallback cuối cùng: sử dụng lessonId = 1 nếu không tìm thấy
+    if (!lessonId) {
+      lessonId = 1;
+      console.log('📚 Using default lessonId = 1 as final fallback');
+    }
+    
+    // Kiểm tra validation
+    if (!examName || !lessonId || !examType || !user?.id || selectedExamQuestions.length === 0) {
+      console.log("Exam name", examName);
+      console.log("lessonId", lessonId);
+      console.log("examType", examType);
+      console.log("user?.id", user?.id);
+      console.log("selectedExamQuestions.length", selectedExamQuestions.length);
       throw new Error('Thiếu thông tin để tạo bài kiểm tra');
     }
+    
     // Lấy id examType
     const examTypeObj = examTypes.find(e => e.id === examType);
     if (!examTypeObj) throw new Error('Không tìm thấy examType');
+    
     try {
       // 1. Tạo exam
       const examPayload = {
         name: examName,
-        lessonId: lesson,
+        lessonId: lessonId,
         examTypeId: examTypeObj.id,
         createdByUserId: user.id,
       };
+      
+      console.log('📝 Creating exam with payload:', examPayload);
       const examRes = await api.post('/exams', examPayload);
-      const examId = examRes.data?.id || examRes.data?.examId || examRes.data?.exam?.id;
-      if (!examId) throw new Error('Không lấy được examId từ response');
+      console.log('📋 Exam creation response:', examRes.data);
+      
+      // Tìm examId từ response với nhiều format khác nhau
+      let examId = null;
+      if (examRes.data?.id) {
+        examId = examRes.data.id;
+      } else if (examRes.data?.examId) {
+        examId = examRes.data.examId;
+      } else if (examRes.data?.exam?.id) {
+        examId = examRes.data.exam.id;
+      } else if (examRes.data?.data?.id) {
+        examId = examRes.data.data.id;
+      } else if (typeof examRes.data === 'object' && Object.keys(examRes.data).length > 0) {
+        // Nếu response là object, tìm key có chứa 'id'
+        const keys = Object.keys(examRes.data);
+        for (const key of keys) {
+          if (key.toLowerCase().includes('id') && examRes.data[key]) {
+            examId = examRes.data[key];
+            break;
+          }
+        }
+      }
+      
+      if (!examId) {
+        console.error('❌ Không thể tìm thấy examId trong response:', examRes.data);
+        throw new Error('Không lấy được examId từ response');
+      }
+      
+      console.log('✅ Exam created successfully with ID:', examId);
+      
       // 2. Gán câu hỏi vào exam
       const assignResults = [];
       for (let i = 0; i < selectedExamQuestions.length; i++) {
@@ -582,9 +636,12 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
           questionId,
           order: i + 1,
         };
+        console.log(`📎 Assigning question ${i + 1}/${selectedExamQuestions.length}:`, assignPayload);
         const assignRes = await api.post('/exams/questions', assignPayload);
         assignResults.push(assignRes.data);
       }
+      
+      console.log('✅ All questions assigned successfully');
       return { exam: examRes.data, assignedQuestions: assignResults };
     } catch (error) {
       console.error('Error in handleCreateExam:', error);
@@ -896,11 +953,14 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
               setIsSubmitting(true);
               try {
                 const result = await handleCreateExam();
-                console.log('Kết quả tạo exam:', result);
+                console.log('✅ Kết quả tạo exam:', result);
                 setShowConfirmModal(false);
+                // Hiển thị thông báo thành công
+                alert('🎉 Tạo bài kiểm tra thành công!');
                 setStep(10);
               } catch (e) {
-                console.error('Lỗi khi tạo exam:', e);
+                console.error('❌ Lỗi khi tạo exam:', e);
+                alert(`❌ Lỗi khi tạo bài kiểm tra: ${e.message}`);
               } finally {
                 setIsSubmitting(false);
               }
