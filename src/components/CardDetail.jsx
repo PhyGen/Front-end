@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
+import api from '@/config/axios';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
 
 const getFileType = (url) => {
   if (!url) return '';
@@ -12,37 +15,77 @@ const getFileType = (url) => {
 
 const CardDetail = () => {
   const { itemId } = useParams();
+  const id = itemId;
   const [item, setItem] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [questions, setQuestions] = useState([]);
+  const [loadingQuestions, setLoadingQuestions] = useState(false);
+  const [errorQuestions, setErrorQuestions] = useState('');
+  const navigate = useNavigate();
 
   // Lấy user từ localStorage
   let user = null;
-  try {
-    user = JSON.parse(localStorage.getItem('token'));
-  } catch {}
+  // Nếu cần lấy user, có thể dùng useAuth hoặc bỏ qua nếu không dùng đến
 
   useEffect(() => {
-    if (!itemId) return;
+    if (!id) return;
     setLoading(true);
     setError('');
-    // Giả sử API công khai là /api/items/:itemId
-    fetch(`/api/items/${itemId}`)
-      .then(res => {
-        if (!res.ok) throw new Error('Không tìm thấy item!');
-        return res.json();
-      })
-      .then(data => setItem(data))
-      .catch(err => setError(err.message))
+    // Giả sử API exam detail là /api/exams/:id
+    api.get(`/exams/${id}`)
+      .then(res => setItem(res.data))
+      .catch(() => setError('Không tìm thấy exam!'))
       .finally(() => setLoading(false));
-  }, [itemId]);
+  }, [id]);
+
+  useEffect(() => {
+    if (!id) return;
+    setLoadingQuestions(true);
+    setErrorQuestions('');
+    api.get(`/exams/${id}/questions`)
+      .then(async res => {
+        const examQuestions = res.data || [];
+        console.log('Exam questions:', examQuestions);
+        // Lấy nội dung từng câu hỏi và các trường chi tiết
+        const questionDetails = await Promise.all(
+          examQuestions.map(async (q) => {
+            try {
+              const detailRes = await api.get(`/questions/${q.questionId}`);
+              const d = detailRes.data;
+              return {
+                ...q,
+                content: d?.content || 'Không có nội dung.',
+                questionSource: d?.questionSource || 'Không có nguồn.',
+                difficultyLevel: d?.difficultyLevel || 'Không rõ',
+                lessonName: d?.lessonName || 'Không xác định',
+              };
+            } catch (err) {
+              console.error('Error fetching question:', q.questionId, err);
+              return { ...q, content: 'Không lấy được nội dung.', questionSource: 'Không có nguồn.', difficultyLevel: 'Không rõ', lessonName: 'Không xác định' };
+            }
+          })
+        );
+        console.log('Detailed questions:', questionDetails);
+        setQuestions(questionDetails);
+      })
+      .catch((err) => {
+        setErrorQuestions('Không lấy được danh sách câu hỏi! ' + err.message);
+      })
+      .finally(() => setLoadingQuestions(false));
+  }, [id]);
 
   const fileType = getFileType(item?.fileUrl || item?.previewUrl);
 
   return (
     <div className="max-w-3xl mx-auto p-6 bg-white rounded-xl shadow mt-8">
-      <div className="mb-4 text-right text-sm text-gray-500">
-        Tài khoản: {user?.email || 'Khách'}
+      <div className="flex items-center mb-6">
+        <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
+          <ArrowLeft className="mr-2" /> Quay lại
+        </Button>
+        <div className="flex-1 text-right text-sm text-gray-500">
+          Tài khoản: {user?.email || 'Khách'}
+        </div>
       </div>
       {loading ? (
         <div>Đang tải dữ liệu...</div>
@@ -77,6 +120,30 @@ const CardDetail = () => {
             <div className="mt-6 w-full">
               <div className="font-semibold">Mô tả:</div>
               <div className="text-gray-700 whitespace-pre-line">{item.description || 'Không có mô tả.'}</div>
+            </div>
+            <div className="mt-8 w-full">
+              <div className="font-semibold mb-2 text-lg text-blue-700">Danh sách câu hỏi trong bài kiểm tra:</div>
+              {loadingQuestions ? (
+                <div>Đang tải câu hỏi...</div>
+              ) : errorQuestions ? (
+                <div className="text-red-600">{errorQuestions}</div>
+              ) : questions.length === 0 ? (
+                <div>Chưa có câu hỏi nào trong bài kiểm tra này.</div>
+              ) : (
+                <div className="max-h-[500px] overflow-y-auto border rounded-lg bg-white">
+                  <ul className="list-decimal pl-6 space-y-4">
+                    {questions.map((q, idx) => (
+                      <li key={q.questionId || q.id || idx} className="text-gray-800 bg-slate-50 rounded-lg p-4 shadow-sm">
+                        <div className="font-semibold">Câu {idx + 1}:</div>
+                        <div className="font-semibold">Nội dung: <span className="font-normal">{q.content}</span></div>
+                        <div><span className="font-semibold">Nguồn:</span> {q.questionSource}</div>
+                        <div><span className="font-semibold">Độ khó:</span> {q.difficultyLevel}</div>
+                        <div><span className="font-semibold">Bài học:</span> {q.lessonName}</div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           </div>
         </>
