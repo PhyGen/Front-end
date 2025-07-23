@@ -7,22 +7,42 @@ export default function RichTextRenderer({ html }) {
 
   React.useEffect(() => {
     if (!ref.current) return;
-    // Parse all mathInline nodes and render KaTeX
-    const mathNodes = ref.current.querySelectorAll('span[data-math-inline]');
+
+    // ✅ Duyệt tất cả các node có data-math-inline (span & div)
+    const mathNodes = ref.current.querySelectorAll('[data-math-inline]');
     mathNodes.forEach(node => {
       const latex = node.getAttribute('value') || '';
-      node.innerHTML = katex.renderToString(latex, { throwOnError: false });
-      node.style.background = '#f0f0f0';
-      node.style.padding = '2px 4px';
-      node.style.borderRadius = '3px';
+      try {
+        const rendered = katex.renderToString(latex, {
+          throwOnError: false,
+          displayMode: node.tagName === 'DIV', // block mode nếu là div
+        });
+        node.innerHTML = rendered;
+
+        // ✅ Styling
+        node.style.background = '#f0f0f0';
+        node.style.padding = '4px 6px';
+        node.style.borderRadius = '4px';
+        node.style.margin = '8px 0';
+        node.style.overflowX = 'auto';
+
+        // Đảm bảo layout đúng cho block
+        if (node.tagName === 'DIV') {
+          node.style.display = 'block';
+        } else {
+          node.style.display = 'inline-block';
+        }
+      } catch (err) {
+        node.innerText = latex;
+      }
     });
   }, [html]);
 
   return (
     <div
       ref={ref}
-      className="prose"
+      className="prose max-w-full break-words"
       dangerouslySetInnerHTML={{ __html: html }}
     />
   );
-} 
+}
