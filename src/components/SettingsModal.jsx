@@ -16,7 +16,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 const RadixModal = ({ open, onOpenChange, children }) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation(); 
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
@@ -64,7 +64,6 @@ const SettingsModal = ({ open, onOpenChange, initialView }) => {
     phoneNumber: ""
   });
   const [startPage, setStartPage] = useState(() => localStorage.getItem('startPage') || 'home');
-  const [pdfOpenMode, setPdfOpenMode] = useState("new-card");
 
   const handleLanguageChange = (lang) => {
     i18n.changeLanguage(lang);
@@ -364,44 +363,6 @@ const SettingsModal = ({ open, onOpenChange, initialView }) => {
                 />
                 <Label htmlFor="lang-vietnamese" className="text-sm font-medium text-slate-700 cursor-pointer dark:text-white">
                   {t('vietnamese')}
-                </Label>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-3">
-              <div className="flex items-center gap-3">
-                <FileText className="w-5 h-5 text-slate-600" />
-                <CardTitle className="text-lg dark:text-white">{t('open_pdf_file')}</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center gap-3">
-                <input
-                  type="radio"
-                  id="pdf-new-card"
-                  name="pdfOpenMode"
-                  value="new-card"
-                  checked={pdfOpenMode === "new-card"}
-                  onChange={(e) => setPdfOpenMode(e.target.value)}
-                  className="w-4 h-4 text-blue-600"
-                />
-                <Label htmlFor="pdf-new-card" className="text-sm font-medium text-slate-700 cursor-pointer dark:text-white">
-                  {t('new_card')}
-                </Label>
-              </div>
-              <div className="flex items-center gap-3">
-                <input
-                  type="radio"
-                  id="pdf-preview"
-                  name="pdfOpenMode"
-                  value="preview"
-                  checked={pdfOpenMode === "preview"}
-                  onChange={(e) => setPdfOpenMode(e.target.value)}
-                  className="w-4 h-4 text-blue-600"
-                />
-                <Label htmlFor="pdf-preview" className="text-sm font-medium text-slate-700 cursor-pointer dark:text-white">
-                  {t('preview')}
                 </Label>
               </div>
             </CardContent>
