@@ -12,6 +12,8 @@ import { useAuth } from '../context/AuthContext';
 import avatarIcon from '../assets/icons/avatar.jpg';
 import { useTranslation } from 'react-i18next';
 import { uploadImgBBOneFile } from '@/config/imgBB';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const RadixModal = ({ open, onOpenChange, children }) => {
   const { t } = useTranslation();
@@ -19,40 +21,31 @@ const RadixModal = ({ open, onOpenChange, children }) => {
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay
-          style={{
-            background: 'rgba(0,0,0,0.5)',
-            position: 'fixed',
-            inset: 0,
-            zIndex: 50,
-          }}
+          className="fixed inset-0 bg-black/50 z-50"
         />
-        <Dialog.Content
-          className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-[#242526] rounded-2xl shadow-2xl w-[800px] max-w-[95vw] max-h-[90vh] p-8 z-[51] overflow-y-auto flex flex-col"
-        >
-          <Dialog.Title style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }} className="dark:text-white">
-            {t('general_settings')}
-          </Dialog.Title>
-          <Dialog.Description style={{ color: '#64748b', marginBottom: 24 }} className="dark:text-white">
-            {t('update_profile_preferences')}
-          </Dialog.Description>
-          {children}
-          <Dialog.Close asChild>
-            <button
-              style={{
-                position: 'absolute',
-                top: 16,
-                right: 16,
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                opacity: 0.7,
-              }}
-              aria-label="Close"
-            >
-              <CloseIcon size={20} />
-            </button>
-          </Dialog.Close>
-        </Dialog.Content>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <Dialog.Content
+            className="bg-white dark:bg-[#242526] rounded-2xl shadow-2xl w-[800px] max-w-[95vw] max-h-[90vh] p-8 overflow-y-auto flex flex-col relative"
+          >
+            <Dialog.Title className="text-2xl font-bold mb-2 dark:text-white">
+              {t('general_settings')}
+            </Dialog.Title>
+            <Dialog.Description className="text-slate-500 mb-6 dark:text-white">
+              {t('update_profile_preferences')}
+            </Dialog.Description>
+
+            {children}
+
+            <Dialog.Close asChild>
+              <button
+                className="absolute top-4 right-4 opacity-70 hover:opacity-100 transition"
+                aria-label="Close"
+              >
+                <CloseIcon size={20} />
+              </button>
+            </Dialog.Close>
+          </Dialog.Content>
+        </div>
       </Dialog.Portal>
     </Dialog.Root>
   );
@@ -110,7 +103,7 @@ const SettingsModal = ({ open, onOpenChange, initialView }) => {
       // Lưu thông tin profile
       console.log("Saving profile data:", profileData);
       try {
-        const response = await api.put(`/users/${user.id}`, {
+        const response = await api.put(`/users/${user.id}/profile`, {
           fullName: profileData.fullName,
           email: profileData.email,
           phoneNumber: profileData.phoneNumber,
@@ -118,12 +111,12 @@ const SettingsModal = ({ open, onOpenChange, initialView }) => {
         });
         
         if (response.status === 200) {
-          alert('Profile updated successfully!');
+          toast.success('Profile updated successfully!');
           // Có thể cập nhật user context nếu cần
         }
       } catch (error) {
         console.error('Error saving profile:', error);
-        alert('Failed to save profile. Please try again.');
+        toast.error('Failed to save profile. Please try again.');
       }
     }
     setIsEditing(!isEditing);
@@ -194,6 +187,7 @@ const SettingsModal = ({ open, onOpenChange, initialView }) => {
   };
 
   return (
+    <>
     <RadixModal open={open} onOpenChange={onOpenChange}>
       <div className="flex flex-col md:flex-row gap-6">
         <div className="flex-1 min-w-[300px]">
@@ -415,6 +409,8 @@ const SettingsModal = ({ open, onOpenChange, initialView }) => {
         </div>
       </div>
     </RadixModal>
+    <ToastContainer position="top-right" autoClose={2000} hideProgressBar={false} newestOnTop closeOnClick pauseOnFocusLoss draggable pauseOnHover />
+    </>
   );
 };
 

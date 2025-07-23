@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Button } from "@/components/ui/button";
@@ -21,8 +21,10 @@ import {
   DialogClose
 } from "@/components/ui/dialog";
 import ContributeModal from '../components/ContributeModal';
+import api from '@/config/axios';
 
 const Header = () => {
+  const { user } = useAuth();
   const navigate = useNavigate();
   const { setUser } = useAuth();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -30,6 +32,12 @@ const Header = () => {
   const [isContributeOpen, setIsContributeOpen] = useState(false);
   const { t } = useTranslation();
   const { setSelectedKey } = useSidebar();
+  const [profileData, setProfileData] = useState({
+    avatar: null,
+    fullName: "",
+    email: "",
+    phoneNumber: ""
+  });
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -56,6 +64,29 @@ const Header = () => {
     setIsSettingsOpen(false);
     setIsDisplayOpen(false);
   };
+
+  const fetchProfileUser = async () => {
+    if (!user || !user.id) return;
+    try {
+      const response = await api.get(`/users/${user.id}`);
+      if (response.data) {
+        setProfileData({
+          avatar: response.data.avatarUrl || null,
+          fullName: response.data.fullName || '',
+          email: response.data.email || '',
+          phoneNumber: response.data.phoneNumber || ''
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (open) {
+      fetchProfileUser();
+    }
+  }, [open, user]);
 
   return (
     <>
@@ -87,7 +118,7 @@ const Header = () => {
             <DropdownMenuTrigger asChild>
               <span className="cursor-pointer">
                 <Avatar className="h-9 w-9 border-2 border-slate-200">
-                  <AvatarImage src={avatarIcon} alt="User Avatar" />
+                  <AvatarImage src={profileData.avatar || avatarIcon} alt="User Avatar" />
                   <AvatarFallback>U</AvatarFallback>
                 </Avatar>
               </span>

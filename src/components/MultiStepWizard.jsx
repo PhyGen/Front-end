@@ -30,6 +30,7 @@ import TiptapEditor from './TiptapEditor';
 import RichTextRenderer from './RichTextRenderer';
 import pdfIcon from '@/assets/icons/pdf-icon.svg';
 import wordIcon from '@/assets/icons/word-icon.svg';
+import { Document, Packer, Paragraph, TextRun, HeadingLevel } from 'docx';
 
 const stepsQuestion = [
   { label: 'Grade Level' },
@@ -152,6 +153,8 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
   // State cho flow exam
   const [examType, setExamType] = useState(null);
   const [selectedExamQuestions, setSelectedExamQuestions] = useState([]);
+  // Lưu chi tiết các câu hỏi đã chọn (object)
+  const [selectedExamQuestionsDetails, setSelectedExamQuestionsDetails] = useState([]);
   const [filterExamTextbook, setFilterExamTextbook] = useState(null);
   const [filterExamChapter, setFilterExamChapter] = useState(null);
   const [filterExamLesson, setFilterExamLesson] = useState(null);
@@ -162,6 +165,63 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
   const [openIndexes, setOpenIndexes] = useState([]); // State cho accordion
   const [examName, setExamName] = useState(''); // State cho tên bài kiểm tra
   const [showExamNameInput, setShowExamNameInput] = useState(false); // State hiển thị input
+  // Thêm state exportFormat (word/pdf)
+  const [exportFormat, setExportFormat] = useState('word'); // 'word' hoặc 'pdf'
+
+  // Thêm ref cho review content
+  const reviewRef = useRef();
+
+  // State điều khiển modal/section in PDF
+  const [showPrintReview, setShowPrintReview] = useState(false);
+
+  // Hàm render nội dung review exam thành HTML
+  const renderExamReviewHTML = () => {
+    let html = `<div><h2 style="text-align:center; color:#2563eb;">${examName || 'Exam Review'}</h2>`;
+    selectedExamQuestions.forEach((qid, idx) => {
+      const q = examQuestionsList.find(q => q.id === qid);
+      const solutionObj = solutions.find(s => s.questionId === qid);
+      html += `
+        <div style="margin-bottom: 24px;">
+          <div style="font-weight: bold;">Question ${idx + 1}${q?.difficultyLevel ? ` (${q.difficultyLevel})` : ''}:</div>
+          <div>${q?.content || ''}</div>
+          <div style="margin-top: 8px; color: #16a34a; font-weight: bold;">Solution:</div>
+          <div>${solutionObj?.content || '<i>No solution</i>'}</div>
+          <div style="margin-top: 8px; color: #2563eb; font-weight: bold;">Explanation:</div>
+          <div>${solutionObj?.explanation || '<i>No explanation</i>'}</div>
+        </div>
+      `;
+    });
+    html += '</div>';
+    return html;
+  };
+
+  // Hàm xử lý download file review (PDF/Word)
+  const handleDownloadExamReview = async (e) => {
+    e.preventDefault();
+    if (exportFormat === 'pdf') {
+      setShowPrintReview(true);
+      setTimeout(() => {
+        window.print();
+        setShowPrintReview(false);
+      }, 200);
+    } else if (exportFormat === 'word') {
+      // Word: lấy innerHTML của reviewRef, tạo Blob, tải về .doc
+      if (reviewRef.current) {
+        const html = `<!DOCTYPE html><html><head><meta charset='utf-8'></head><body>${reviewRef.current.innerHTML}</body></html>`;
+        const blob = new Blob([html], { type: 'application/msword' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${examName || 'exam-review'}.doc`;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        }, 100);
+      }
+    }
+  };
 
   // --- State riêng cho modal Search Question ---
   const [modalChapters, setModalChapters] = useState([]);
@@ -467,23 +527,6 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
     })();
   }, [lesson]);
 
-  // UI step labels (for Stepper)
-  const stepsQuestion = [
-    { label: t('grade_level') },
-    { label: t('textbook') },
-    { label: t('semester') },
-    { label: t('chapter') },
-    { label: t('lesson') },
-    { label: t('difficulty_level') },
-  ];
-  const stepsExam = [
-    { label: t('grade_level') },
-    { label: t('semester') },
-    { label: t('type') },
-    { label: t('questions') },
-    { label: t('review_exam') },
-  ];
-
   // Hàm gửi question và solution
   const handleCreateQuestionAndSolution = async () => {
     console.log("Lesson để nộp",lesson);
@@ -585,6 +628,7 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
           questionId,
           order: i + 1,
         };
+        console.log("Những câu hỏi sẽ vào kiểm tra",assignPayload);
         const assignRes = await api.post('/exams/questions', assignPayload);
         assignResults.push(assignRes.data);
       }
@@ -695,15 +739,15 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
             <Label>{t('selected_question_list')}</Label>
             <div className="max-h-64 overflow-y-auto border rounded p-2 bg-slate-50">
               {selectedExamQuestions.length === 0 && <div className="text-gray-400 italic">{t('no_selected_questions')}</div>}
-              {selectedExamQuestions.map(qid => {
-                const question = examQuestionsList.find(q => q.id === qid);
-                return (
-                  <div key={qid} className="flex items-center gap-2 border-b py-2 last:border-b-0">
-                    <span><RichTextRenderer html={question?.content} /></span>
-                    <Button size="sm" variant="outline" className="bg-red-600 text-white  hover:bg-red-700 hover:text-white" onClick={() => setSelectedExamQuestions(prev => prev.filter(id => id !== qid))}>Remove</Button>
-                  </div>
-                );
-              })}
+              {selectedExamQuestionsDetails.map(question => (
+                <div key={question.id} className="flex items-center gap-2 border-b py-2 last:border-b-0">
+                  <span><RichTextRenderer html={question?.content} /></span>
+                  <Button size="sm" variant="outline" className="bg-red-600 text-white  hover:bg-red-700 hover:text-white" onClick={() => {
+                    setSelectedExamQuestions(prev => prev.filter(id => id !== question.id));
+                    setSelectedExamQuestionsDetails(prev => prev.filter(q => q.id !== question.id));
+                  }}>Remove</Button>
+                </div>
+              ))}
             </div>
           </div>
           <div className="flex justify-between mt-8">
@@ -785,9 +829,18 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
                 <input
                   type="checkbox"
                   checked={selectedExamQuestions.includes(q.id)}
-                  onChange={e => {
-                    if (e.target.checked) setSelectedExamQuestions(prev => [...prev, q.id]);
-                    else setSelectedExamQuestions(prev => prev.filter(id => id !== q.id));
+                  onChange={async e => {
+                    if (e.target.checked) {
+                      setSelectedExamQuestions(prev => [...prev, q.id]);
+                      setSelectedExamQuestionsDetails(prev => {
+                        // Nếu đã có thì không thêm lại
+                        if (prev.some(qq => qq.id === q.id)) return prev;
+                        return [...prev, q];
+                      });
+                    } else {
+                      setSelectedExamQuestions(prev => prev.filter(id => id !== q.id));
+                      setSelectedExamQuestionsDetails(prev => prev.filter(qq => qq.id !== q.id));
+                    }
                   }}
                 />
                 <span><RichTextRenderer html={q.content} /></span>
@@ -857,7 +910,7 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
              )}
             {selectedExamQuestions.length === 0 && <div className="text-gray-400 italic">Chưa chọn câu hỏi nào</div>}
             {paginatedQuestions.map((qid, idx) => {
-              const q = examQuestionsList.find(q => q.id === qid);
+              const q = selectedExamQuestionsDetails.find(q => q.id === qid);
               const solutionObj = solutions.find(s => s.questionId === qid);
               const globalIdx = startIdx + idx;
               const isOpen = openIndexes.includes(globalIdx);
@@ -955,6 +1008,33 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
             </div>
             <h2 className="text-2xl font-bold text-green-600 mb-2">Thank you!</h2>
             <p className="text-gray-600 mb-6">Your submission has been sent.</p>
+            {/* Chọn định dạng xuất file */}
+            <div className="flex items-center gap-4 mb-4">
+              <span className="font-semibold">Export as:</span>
+              <label className="flex items-center gap-1">
+              <img src={wordIcon} alt="PDF" className="w-5 h-5 mr-2 inline-block" />
+                <input type="radio" name="exportFormat" value="word" checked={exportFormat === 'word'} onChange={() => setExportFormat('word')} /> Word
+              </label>
+              <label className="flex items-center gap-1">
+              <img src={pdfIcon} alt="PDF" className="w-5 h-5 mr-2 inline-block" />
+                <input type="radio" name="exportFormat" value="pdf" checked={exportFormat === 'pdf'} onChange={() => setExportFormat('pdf')} /> PDF
+              </label>
+              <button className="ml-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600" onClick={handleDownloadExamReview}>
+                {exportFormat === 'pdf' ? 'Print PDF' : 'Download here'}
+              </button>
+            </div>
+            {/* Hidden review content for export (giữ nguyên công thức toán học) */}
+            <div style={{ display: 'none' }}>
+              <div ref={reviewRef}>
+                <RichTextRenderer html={renderExamReviewHTML()} />
+              </div>
+            </div>
+            {/* Section/modal in PDF (chỉ hiện khi showPrintReview) */}
+            {showPrintReview && (
+              <div id="print-review-section" style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'white', zIndex: 9999, overflow: 'auto', padding: 32 }}>
+                <RichTextRenderer html={renderExamReviewHTML()} />
+              </div>
+            )}
             <div className="flex gap-4">
               <Button onClick={() => window.location.href = '/'} className="bg-blue-500 hover:bg-blue-600">Go Home</Button>
               <Button onClick={() => {
@@ -1466,5 +1546,31 @@ const ConfirmDialog = ({
     </DialogContent>
   </Dialog>
 );
+
+// CSS chỉ in phần review khi print
+const printStyle = `
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+  #print-review-section, #print-review-section * {
+    visibility: visible !important;
+  }
+  #print-review-section {
+    position: absolute !important;
+    left: 0; top: 0; width: 100vw; height: 100vh; background: white !important; z-index: 99999 !important; padding: 32px !important;
+  }
+}
+`;
+
+if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+  let styleTag = document.getElementById('print-style-tag');
+  if (!styleTag) {
+    styleTag = document.createElement('style');
+    styleTag.id = 'print-style-tag';
+    styleTag.innerHTML = printStyle;
+    document.head.appendChild(styleTag);
+  }
+}
 
 export default MultiStepWizard; 
