@@ -50,7 +50,7 @@ const PhyGenVideo = () => {
     try {
       const formData = new FormData();
       formData.append('file', image);
-      const response = await fetch('http://localhost:8000/solve-physics-problem/', {
+      const response = await fetch('https://41614da08582.ngrok-free.app/docs', {
         method: 'POST',
         body: formData,
       });
