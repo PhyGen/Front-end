@@ -37,6 +37,8 @@ const AdminSemester = () => {
       api.get('/grades')
     ])
       .then(([semesterRes, gradeRes]) => {
+        console.log("Thông tin list semesters",semesterRes.data);
+        console.log("Thông tin list grades",semesterRes.data);
         setSemesters(semesterRes.data);
         setGrades(gradeRes.data);
       })
@@ -113,16 +115,6 @@ const AdminSemester = () => {
       <CardContent>
         <div className="mb-4 flex gap-2 items-center">
           <Input value={newSemester.name} onChange={e => setNewSemester(s => ({ ...s, name: e.target.value }))} placeholder="Tên học kỳ mới" />
-          <Select value={newSemester.gradeId} onValueChange={v => setNewSemester(s => ({ ...s, gradeId: v }))}>
-            <SelectTrigger className="w-32"><SelectValue placeholder="Chọn lớp" /></SelectTrigger>
-            <SelectContent>
-              {grades.filter(g => g.id !== undefined && g.id !== null && g.id !== '').map(g => (
-                <SelectItem key={g.id} value={g.id.toString()}>
-                  {g.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
           <Button onClick={handleAdd} className="flex items-center gap-1 bg-black hover:bg-neutral-800 text-white">
             <img src={AddIcon} alt="add" className="w-4 h-4" />
             Thêm
@@ -154,16 +146,7 @@ const AdminSemester = () => {
                         <Input value={editRow.name} onChange={e => setEditRow(r => ({ ...r, name: e.target.value }))} placeholder="Nhập tên học kỳ" />
                       </td>
                       <td className="px-4 py-2 border">
-                        <Select value={editRow.gradeId} onValueChange={v => setEditRow(r => ({ ...r, gradeId: v }))}>
-                          <SelectTrigger className="w-32"><SelectValue placeholder="Chọn lớp" /></SelectTrigger>
-                          <SelectContent>
-                            {grades.filter(g => g.id !== undefined && g.id !== null && g.id !== '').map(g => (
-                              <SelectItem key={g.id} value={g.id.toString()}>
-                                {g.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                      {s.gradeName}
                       </td>
                       <td className="px-4 py-2 border">{formatDate(s.createdAt)}</td>
                       <td className="px-4 py-2 border">{formatDate(s.updatedAt)}</td>
@@ -176,7 +159,7 @@ const AdminSemester = () => {
                     <tr key={s.id} className="even:bg-slate-50">
                       <td className="px-4 py-2 border">{s.id}</td>
                       <td className="px-4 py-2 border">{s.name}</td>
-                      <td className="px-4 py-2 border">{grades.find(g => g.id === s.gradeId)?.name || s.gradeId}</td>
+                      <td className="px-4 py-2 border">{grades.find(g => g.id === s.gradeId)?.name || s.gradeName}</td>
                       <td className="px-4 py-2 border">{formatDate(s.createdAt)}</td>
                       <td className="px-4 py-2 border">{formatDate(s.updatedAt)}</td>
                       <td className="px-4 py-2 border flex gap-2">
