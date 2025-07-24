@@ -8,30 +8,27 @@ export default function RichTextRenderer({ html }) {
   React.useEffect(() => {
     if (!ref.current) return;
 
-    // ✅ Duyệt tất cả các node có data-math-inline (span & div)
     const mathNodes = ref.current.querySelectorAll('[data-math-inline]');
     mathNodes.forEach(node => {
       const latex = node.getAttribute('value') || '';
       try {
         const rendered = katex.renderToString(latex, {
           throwOnError: false,
-          displayMode: node.tagName === 'DIV', // block mode nếu là div
+          strict: false,
+          displayMode: node.tagName === 'DIV',
         });
         node.innerHTML = rendered;
 
-        // ✅ Styling
+        // ✅ Styling chống tràn
         node.style.background = '#f0f0f0';
         node.style.padding = '4px 6px';
         node.style.borderRadius = '4px';
         node.style.margin = '8px 0';
         node.style.overflowX = 'auto';
+        node.style.maxWidth = '100%';
+        node.style.wordBreak = 'break-word';
 
-        // Đảm bảo layout đúng cho block
-        if (node.tagName === 'DIV') {
-          node.style.display = 'block';
-        } else {
-          node.style.display = 'inline-block';
-        }
+        node.style.display = node.tagName === 'DIV' ? 'block' : 'inline-block';
       } catch (err) {
         node.innerText = latex;
       }
@@ -42,6 +39,13 @@ export default function RichTextRenderer({ html }) {
     <div
       ref={ref}
       className="prose max-w-full break-words"
+      style={{
+        maxHeight: 280,             
+        overflowY: 'auto',          
+        overflowX: 'hidden',
+        wordBreak: 'break-word',
+        whiteSpace: 'normal',
+      }}
       dangerouslySetInnerHTML={{ __html: html }}
     />
   );
