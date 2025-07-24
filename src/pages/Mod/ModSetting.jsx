@@ -149,7 +149,6 @@ const ModSetting = () => {
             </form>
           ) : (
             <div className="mb-6">
-              <div className="mb-2"><b>ID:</b> {userInfo.id}</div>
               <div className="mb-2"><b>Email:</b> {userInfo.email}</div>
               <div className="mb-2"><b>Họ tên:</b> {userInfo.fullName || userInfo.name || '-'}</div>
               <div className="mb-2"><b>Số điện thoại:</b> {userInfo.phoneNumber || '-'}</div>
