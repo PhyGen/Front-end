@@ -29,9 +29,6 @@ const ModChapter = () => {
   const [editId, setEditId] = useState(null);
   const [editRow, setEditRow] = useState({ id: '', name: '', semesterId: '' });
   const [saving, setSaving] = useState(false);
-  const [deletingId, setDeletingId] = useState(null);
-  const [sort, setSort] = useState('id:asc');
-  const [pendingSort, setPendingSort] = useState('id:asc');
 
   const fetchData = () => {
     setLoading(true);
@@ -95,19 +92,6 @@ const ModChapter = () => {
       alert('Lưu thất bại!');
     } finally {
       setSaving(false);
-    }
-  };
-
-  const handleDelete = async (id) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa?')) return;
-    setDeletingId(id);
-    try {
-      await api.delete(`/chapters/${id}`);
-      fetchData();
-    } catch (e) {
-      alert('Xóa thất bại!');
-    } finally {
-      setDeletingId(null);
     }
   };
 
@@ -180,7 +164,6 @@ const ModChapter = () => {
                         <td className="px-4 py-2 border">{formatDate(c.updatedAt)}</td>
                         <td className="px-4 py-2 border flex gap-2">
                           <Button size="sm" className="bg-blue-500 hover:bg-blue-600 text-white" onClick={() => handleEdit(c.id)}>Edit</Button>
-                          <Button size="sm" className="bg-red-500 hover:bg-red-600 text-white" onClick={() => handleDelete(c.id)}>Delete</Button>
                         </td>
                       </tr>
                     );

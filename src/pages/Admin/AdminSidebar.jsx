@@ -2,14 +2,7 @@ import React from 'react';
 
 const sidebarItems = [
   { key: 'account', label: 'Account' },
-  { key: 'grade', label: 'Grade' },
-  { key: 'semester', label: 'Semester' },
-  { key: 'chapter', label: 'Chapter' },
-  { key: 'lesson', label: 'Lesson' },
-  { key: 'textbook', label: 'Textbook' },
-  { key: 'question', label: 'Question' },
   { key: 'setting', label: 'Setting' },
-
 ];
 
 const AdminSidebar = ({ selected, onSelect }) => {
