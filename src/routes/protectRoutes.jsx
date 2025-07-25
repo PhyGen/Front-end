@@ -1,21 +1,31 @@
-import { Navigate } from "react-router-dom";
-import { jwtDecode } from 'jwt-decode';
+import { Navigate, useLocation } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
-const ProtectedRoute = ({ children, role }) => {
-    const token = localStorage.getItem("token");
+const roleToPath = {
+  "1": "/",
+  "2": "/admin",
+  "3": "/mod"
+};
 
-    if (!token) {
-        return <Navigate to="/login" replace />;
-    }
+const ProtectedRoute = ({ children }) => {
+  const { user, loading } = useAuth();
+  const location = useLocation();
 
-    const user = jwtDecode(token);
-    console.log(user);
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
-    if (!user || user.role !== role) {
-        return <Navigate to="/errorPage" replace />;
-    }
+  if (!user) {
+    return <Navigate to="/landing" replace />;
+  }
 
-    return children;
+  // Kiểm tra roleId và path
+  const expectedPath = roleToPath[user.roleId];
+  if (expectedPath && !location.pathname.startsWith(expectedPath)) {
+    return <Navigate to={expectedPath} replace />;
+  }
+
+  return children;
 };
 
 export default ProtectedRoute;
