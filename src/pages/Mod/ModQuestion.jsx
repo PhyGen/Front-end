@@ -35,21 +35,27 @@ const ModQuestion = () => {
   const [chapters, setChapters] = useState([]);
   const [solutions, setSolutions] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  // confirmed filters
   const [search, setSearch] = useState('');
-  const [pendingSearch, setPendingSearch] = useState('');
   const [sort, setSort] = useState('createdAt:desc');
-  const [pendingSort, setPendingSort] = useState('createdAt:desc');
   const [lessonId, setLessonId] = useState('all');
-  const [pendingLessonId, setPendingLessonId] = useState('all');
   const [chapterId, setChapterId] = useState('all');
-  const [pendingChapterId, setPendingChapterId] = useState('all');
   const [difficultyLevel, setDifficultyLevel] = useState('all');
+  
+  // pending filters
+  const [pendingSearch, setPendingSearch] = useState('');
+  const [pendingSort, setPendingSort] = useState('createdAt:desc');
+  const [pendingLessonId, setPendingLessonId] = useState('all');
+  const [pendingChapterId, setPendingChapterId] = useState('all');
   const [pendingDifficultyLevel, setPendingDifficultyLevel] = useState('all');
+
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(5);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
 
+  // edit modal state
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editData, setEditData] = useState({
     questionId: null,
@@ -60,32 +66,78 @@ const ModQuestion = () => {
     solutionExplanation: ''
   });
 
+  // initial fetch of options
   useEffect(() => {
-    api.get('/lessons').then(res => setLessons(res.data.items || []));
+    api.get('/lessons',{
+      params: {
+        chapterId: pendingChapterId !== 'all' ? pendingChapterId : undefined,
+      }
+    }).then(res => setLessons(res.data.items || []));
     api.get('/chapters').then(res => setChapters(res.data || []));
-  }, []);
+  }, [pendingChapterId]);
 
   const fetchQuestions = () => {
     setLoading(true);
     api.get('/questions', {
-      params: { search, sort, isSort: 1, lessonId: lessonId !== 'all' ? lessonId : undefined, chapterId: chapterId !== 'all' ? chapterId : undefined, difficultyLevel: difficultyLevel !== 'all' ? difficultyLevel : undefined, pageNumber: page, pageSize }
+      params: {
+        search,
+        sort,
+        isSort: 1,
+        lessonId: lessonId !== 'all' ? lessonId : undefined,
+        chapterId: chapterId !== 'all' ? chapterId : undefined,
+        difficultyLevel: difficultyLevel !== 'all' ? difficultyLevel : undefined,
+        pageNumber: page,
+        pageSize,
+      }
     })
-    .then(res => { const filteredItems = (res.data.items || []).filter(item => item.id >= 0);
-      setQuestions(filteredItems); 
-      setTotalPages(res.data.totalPages || 1); 
-      setTotalItems(res.data.totalItems || 0); })
-    .catch(() => setQuestions([]))
-    .finally(() => setLoading(false));
+      .then(res => {
+        const filteredItems = (res.data.items || []).filter(item => item.id >= 0);
+        setQuestions(filteredItems);
+        setTotalPages(res.data.totalPages || 1);
+        setTotalItems(res.data.totalItems || 0);
+      })
+      .catch(() => {
+        setQuestions([]);
+        setTotalPages(1);
+        setTotalItems(0);
+      })
+      .finally(() => setLoading(false));
   };
 
   const fetchSolutions = async () => {
-    try { const res = await api.get('/solutions'); setSolutions(res.data || []); } catch { setSolutions([]); }
+    try {
+      const res = await api.get('/solutions');
+      setSolutions(res.data || []);
+    } catch {
+      setSolutions([]);
+    }
   };
 
-  useEffect(() => { fetchQuestions(); fetchSolutions(); }, [page, pageSize, search, sort, lessonId, chapterId, difficultyLevel]);
+  // fetch whenever confirmed filters or pagination change
+  useEffect(() => {
+    fetchQuestions();
+    fetchSolutions();
+  }, [page, pageSize, search, sort, lessonId, chapterId, difficultyLevel]);
 
-  const handleSearch = () => { setSearch(pendingSearch); setLessonId(pendingLessonId); setChapterId(pendingChapterId); setSort(pendingSort); setDifficultyLevel(pendingDifficultyLevel); setPage(1); };
-  const handleReset = () => { setSearch(''); setPendingSearch(''); setSort('createdAt:desc'); setPendingSort('createdAt:desc'); setLessonId('all'); setPendingLessonId('all'); setChapterId('all'); setPendingChapterId('all'); setDifficultyLevel('all'); setPendingDifficultyLevel('all'); setPage(1); };
+  // apply pending filters
+  const handleSearch = () => {
+    setSearch(pendingSearch);
+    setSort(pendingSort);
+    setLessonId(pendingLessonId);
+    setChapterId(pendingChapterId);
+    setDifficultyLevel(pendingDifficultyLevel);
+    setPage(1);
+  };
+
+  // reset all filters
+  const handleReset = () => {
+    setPendingSearch(''); setSearch('');
+    setPendingSort('createdAt:desc'); setSort('createdAt:desc');
+    setPendingLessonId('all'); setLessonId('all');
+    setPendingChapterId('all'); setChapterId('all');
+    setPendingDifficultyLevel('all'); setDifficultyLevel('all');
+    setPage(1);
+  };
 
   const handleDelete = async (questionId) => {
     if (!window.confirm('Bạn có chắc chắn muốn xóa câu hỏi này?')) return;
@@ -94,36 +146,121 @@ const ModQuestion = () => {
       const sol = solutions.find(s => s.questionId === questionId);
       if (sol) await api.delete(`/solutions/${sol.id}`);
       fetchQuestions(); fetchSolutions();
-    } catch { alert('Xóa thất bại'); }
+    } catch {
+      alert('Xóa thất bại, vui lòng thử lại');
+    }
   };
 
   const handleEdit = (row) => {
     const sol = solutions.find(s => s.questionId === row.id) || {};
-    setEditData({ questionId: row.id, content: row.content, difficultyLevel: row.difficultyLevel, solutionId: sol.id || null, solutionContent: sol.content || '', solutionExplanation: sol.explanation || '' });
+    setEditData({
+      questionId: row.id,
+      content: row.content,
+      difficultyLevel: row.difficultyLevel,
+      solutionId: sol.id || null,
+      solutionContent: sol.content || '',
+      solutionExplanation: sol.explanation || ''
+    });
     setIsEditOpen(true);
   };
 
   const saveEdit = async () => {
     try {
-      await api.put(`/questions/${editData.questionId}`, { id: editData.questionId, content: editData.content, difficultyLevel: editData.difficultyLevel });
-      if (editData.solutionId) await api.put(`/solutions/${editData.solutionId}`, { id: editData.solutionId, content: editData.solutionContent, explanation: editData.solutionExplanation });
-      setIsEditOpen(false); 
-      fetchQuestions(); 
-      fetchSolutions();
-    } catch { alert('Cập nhật thất bại'); }
+      await api.put(`/questions/${editData.questionId}`, {
+        id: editData.questionId,
+        content: editData.content,
+        difficultyLevel: editData.difficultyLevel
+      });
+      if (editData.solutionId) {
+        await api.put(`/solutions/${editData.solutionId}`, {
+          id: editData.solutionId,
+          content: editData.solutionContent,
+          explanation: editData.solutionExplanation
+        });
+      }
+      setIsEditOpen(false);
+      fetchQuestions(); fetchSolutions();
+    } catch {
+      alert('Cập nhật thất bại, vui lòng thử lại');
+    }
   };
 
   return (
     <Card>
-      <CardHeader><CardTitle>Question Management</CardTitle></CardHeader>
+      <CardHeader>
+        <CardTitle>Question Management</CardTitle>
+      </CardHeader>
       <CardContent>
-        {/* Filters & search UI (unchanged) */}
-        {/* Table & pagination UI (unchanged) */}
+        {/* SEARCH & FILTERS */}
+        <div className="mb-4 flex gap-2 items-center flex-wrap">
+          <Input
+            value={pendingSearch}
+            onChange={e => setPendingSearch(e.target.value)}
+            placeholder="Tìm kiếm nội dung câu hỏi..."
+            className="w-64"
+          />
+
+          <Select value={pendingChapterId} onValueChange={v => setPendingChapterId(v)}>
+            <SelectTrigger className="w-40"><SelectValue placeholder="Lọc theo chương" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tất cả chương</SelectItem>
+              {chapters.map(c => <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+
+          <Select value={pendingLessonId} onValueChange={v => setPendingLessonId(v)}>
+            <SelectTrigger className="w-40"><SelectValue placeholder="Lọc theo bài học" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tất cả bài học</SelectItem>
+              {lessons.map(c => <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+
+          <Select value={pendingDifficultyLevel} onValueChange={v => setPendingDifficultyLevel(v)}>
+            <SelectTrigger className="w-40"><SelectValue placeholder="Lọc theo độ khó" /></SelectTrigger>
+            <SelectContent>
+              {difficultyLevels.map(dl => <SelectItem key={dl.value} value={dl.value}>{dl.label}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={pendingSort} onValueChange={v => setPendingSort(v)}>
+            <SelectTrigger className="w-48"><SelectValue placeholder="Sắp xếp" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="createdAt:desc">Mới nhất</SelectItem>
+              <SelectItem value="createdAt:asc">Cũ nhất</SelectItem>
+              <SelectItem value="content:asc">Câu hỏi A-Z</SelectItem>
+              <SelectItem value="content:desc">Câu hỏi Z-A</SelectItem>
+              <SelectItem value="difficultyLevel:asc">Độ khó tăng dần</SelectItem>
+              <SelectItem value="difficultyLevel:desc">Độ khó giảm dần</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button onClick={handleSearch} className="bg-blue-500 hover:bg-blue-600 text-white">Tìm kiếm</Button>
+          <Button onClick={handleReset} variant="outline">Đặt lại</Button>
+        </div>
+
+        {/* ITEMS COUNT & PAGE SIZE */}
+        <div className="mb-4 flex items-center gap-4">
+          <span className="text-sm text-slate-600">Tổng số câu hỏi: {totalItems}</span>
+          <Select value={pageSize.toString()} onValueChange={v => { setPageSize(Number(v)); setPage(1); }}>
+            <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {pageSizeOptions.map(size => (
+                <SelectItem key={size} value={size.toString()}>{size} / trang</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* TABLE */}
         <div className="overflow-x-auto min-h-[120px]">
           {loading ? (
-            <div className="flex justify-center items-center h-24"><img src={loadingGif} alt="loading" className="w-10 h-10" /></div>
+            <div className="flex justify-center items-center h-24">
+              <img src={loadingGif} alt="loading" className="w-10 h-10" />
+            </div>
           ) : questions.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-8"><img src={StatusNotFound} alt="not found" className="w-16 h-16 mb-2 opacity-80" /><span className="text-red-600 font-semibold text-lg">Question not found</span></div>
+            <div className="flex flex-col items-center justify-center py-8">
+              <img src={StatusNotFound} alt="not found" className="w-16 h-16 mb-2 opacity-80" />
+              <span className="text-red-600 font-semibold text-lg">Question not found</span>
+            </div>
           ) : (
             <table className="min-w-[900px] w-full border border-slate-200 rounded-lg bg-white shadow-sm text-sm">
               <thead>
@@ -134,11 +271,11 @@ const ModQuestion = () => {
                   <th className="px-4 py-2 border-b">Explanation</th>
                   <th className="px-4 py-2 border-b">Lesson</th>
                   <th className="px-4 py-2 border-b">Chapter</th>
-                  <th className="px-4 py-2 border-b">Difficulty</th>
-                  <th className="px-4 py-2 border-b">Created By</th>
-                  <th className="px-4 py-2 border-b">Created At</th>
-                  <th className="px-4 py-2 border-b">Updated At</th>
-                  <th className="px-4 py-2 border-b">Actions</th>
+                  <th className="px-4 py-2 border-б">Difficulty</th>
+                  <th className="px-4 py-2 border-б">Created By</th>
+                  <th className="px-4 py-2 border-б">Created At</th>
+                  <th className="px-4 py-2 border-б">Updated At</th>
+                  <th className="px-4 py-2 border-б">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -147,14 +284,14 @@ const ModQuestion = () => {
                   return (
                     <tr key={row.id} className="even:bg-slate-50">
                       <td className="px-4 py-2 border-b text-center">{row.id}</td>
-                      <td className="px-4 py-2 border-b">{row.content}</td>
-                      <td className="px-4 py-2 border-b">{matchedSolution?.content || '-'}</td>
-                      <td className="px-4 py-2 border-b">{matchedSolution?.explanation || '-'}</td>
-                      <td className="px-4 py-2 border-b">{row.lessonName}</td>
-                      <td className="px-4 py-2 border-b">{row.chapterName}</td>
-                      <td className="px-4 py-2 border-b">{row.difficultyLevel}</td>
-                      <td className="px-4 py-2 border-b">{row.createdByUserName}</td>
-                      <td className="px-4 py-2 border-b">{formatDate(row.createdAt)}</td>
+                      <td className="px-4 py-2 border-б">{row.content}</td>
+                      <td className="px-4 py-2 border-б">{matchedSolution?.content || '-'}</td>
+                      <td className="px-4 py-2 border-б">{matchedSolution?.explanation || '-'}</td>
+                      <td className="px-4 py-2 border-б">{row.lessonName}</td>
+                      <td className="px-4 py-2 border-б">{row.chapterName}</td>
+                      <td className="px-4 py-2 border-б">{row.difficultyLevel}</td>
+                      <td className="px-4 py-2 border-б">{row.createdByUserName}</td>
+                      <td className="px-4 py-2 border-б">{formatDate(row.createdAt)}</td>
                       <td className="px-4 py-2 border-б">{formatDate(row.updatedAt)}</td>
                       <td className="px-4 py-2 border flex gap-2">
                         <Button className="bg-blue-500 hover:bg-blue-600 text-white" onClick={() => handleEdit(row)}>Edit</Button>
@@ -167,8 +304,31 @@ const ModQuestion = () => {
             </table>
           )}
         </div>
+
+        {/* PAGINATION */}
+        <div className="mt-4 flex justify-center">
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious onClick={() => setPage(Math.max(1, page - 1))} disabled={page === 1} />
+              </PaginationItem>
+              {[...Array(totalPages)].map((_, i) => (
+                <PaginationItem key={i}>
+                  <PaginationLink isActive={page === i + 1} onClick={() => setPage(i + 1)}>
+                    {i + 1}
+                  </PaginationLink>
+                </PaginationItem>
+              ))}
+              <PaginationItem>
+                <PaginationNext onClick={() => setPage(Math.min(totalPages, page + 1))} disabled={page === totalPages} />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>
+
       </CardContent>
 
+      {/* EDIT DIALOG */}
       {isEditOpen && (
         <Dialog open onOpenChange={setIsEditOpen}>
           <DialogContent className="sm:max-w-[500px]">
@@ -178,7 +338,7 @@ const ModQuestion = () => {
               <Select value={editData.difficultyLevel} onValueChange={v => setEditData({...editData, difficultyLevel: v})}>
                 <SelectTrigger><SelectValue placeholder="Chọn độ khó"/></SelectTrigger>
                 <SelectContent>
-                  {difficultyLevels.filter(d => d.value !== 'all').map(dl => <SelectItem key={dl.value} value={dl.value}>{dl.label}</SelectItem>)}
+                  {difficultyLevels.filter(d => d.value!=='all').map(dl => <SelectItem key={dl.value} value={dl.value}>{dl.label}</SelectItem>)}
                 </SelectContent>
               </Select>
               <Input value={editData.solutionContent} onChange={e => setEditData({...editData, solutionContent: e.target.value})} placeholder="Nội dung lời giải" />
