@@ -11,6 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import ModSetting from './ModSetting';
 import ModQuestion from './ModQuestion';
 import ModTextbook from './ModTextbook';
+import PhyGenVideo from './PhyGenVideo';
 
 function decodeId(encodedId) {
   const bytes = Uint8Array.from(atob(encodedId), c => c.charCodeAt(0));
@@ -51,6 +52,7 @@ const ModContent = ({ selected }) => {
   // else if (selected === 'question') content = <ModQuestion />;
   else if (selected === 'setting') content = <ModSetting />;
   else if (selected === 'question') content = <ModQuestion />;
+  else if (selected === 'pgvideo') content = <PhyGenVideo />;
 
   console.log('Content to render:', content);
 

@@ -26,7 +26,7 @@ import TrashCan from "./TrashCan";
 import SharedWithMe from "./SharedWithMe";
 import Starred from "./Starred";
 import SpamContent from "./SpamContent";
-import PhyGenVideo from "./PhyGenVideo";
+import PhyGenVideo from "./Mod/PhyGenVideo";
 
 const Placeholder = ({ label, icon: Icon, description, color = "blue", children }) => (
   <Card className="shadow-lg border-0 bg-gradient-to-br from-white to-slate-50 dark:from-black dark:to-neutral-900 mb-8">
@@ -115,9 +115,6 @@ const MainScreen = () => {
         break;
       case 'trash':
         content = <TrashCan />;
-        break;
-      case 'pgvideo':
-        content = <PhyGenVideo />;
         break;
       default:
         content = <HomeBox />;

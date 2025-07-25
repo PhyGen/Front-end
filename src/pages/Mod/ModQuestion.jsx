@@ -9,6 +9,125 @@ import AddIcon from '@/assets/icons/add-symbol-svgrepo-com.svg';
 import StatusNotFound from '@/assets/icons/status-notfound-svgrepo-com.svg';
 import loadingGif from '@/assets/icons/loading.gif';
 import api from '../../config/axios';
+import { useNavigate } from 'react-router-dom';
+
+// Component để hiển thị video từ API
+const VideoPlayer = ({ solutionId }) => {
+  const [videoUrl, setVideoUrl] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [contentType, setContentType] = useState(null);
+
+  useEffect(() => {
+    if (solutionId) {
+      loadVideo();
+    }
+  }, [solutionId]);
+
+  const loadVideo = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      console.log(`Loading video for solution ID: ${solutionId}`);
+      
+      // Test API call trước
+      const testResponse = await api.get(`/solutions/${solutionId}`);
+      console.log('Solution data:', testResponse.data);
+      
+      // Thử với endpoint đầy đủ như Postman
+      const response = await api.get(`/api/solutions/${solutionId}/video`, {
+        responseType: 'blob',
+        headers: {
+          'Accept': 'video/*',
+        },
+      });
+      
+      if (response.status === 200) {
+        console.log("Video Manim Response:", response);
+        console.log("Response Headers:", response.headers);
+        console.log("Response Data Type:", typeof response.data);
+        console.log("Response Data Size:", response.data.size);
+        
+        const blob = response.data;
+        const contentType = response.headers['content-type'] || 'video/mp4';
+        setContentType(contentType);
+        
+        // Kiểm tra xem blob có hợp lệ không
+        if (blob && blob.size > 0) {
+          // Tạo blob với content type chính xác
+          const videoBlob = new Blob([blob], { type: contentType });
+          const url = URL.createObjectURL(videoBlob);
+          console.log("Created Video URL:", url);
+          console.log("Content Type:", contentType);
+          setVideoUrl(url);
+        } else {
+          console.error("Invalid blob data:", blob);
+          setError('Invalid video data');
+        }
+      } else {
+        console.error("Response status not 200:", response.status);
+        setError('Failed to load video');
+      }
+    } catch (err) {
+      console.error('Error loading video:', err);
+      console.error('Error details:', err.response);
+      setError('Video not available');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Cleanup URL khi component unmount hoặc solutionId thay đổi
+  useEffect(() => {
+    return () => {
+      if (videoUrl) {
+        URL.revokeObjectURL(videoUrl);
+        setVideoUrl(null);
+      }
+    };
+  }, [videoUrl, solutionId]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center w-32 h-20 bg-gray-100 rounded">
+        <img src={loadingGif} alt="loading" className="w-6 h-6" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center w-32 h-20 bg-gray-100 rounded text-xs text-gray-500 p-1">
+        <span>{error}</span>
+        <span className="text-xs text-gray-400">ID: {solutionId}</span>
+        {contentType && <span className="text-xs text-gray-400">Type: {contentType}</span>}
+      </div>
+    );
+  }
+
+  if (!videoUrl) {
+    return (
+      <div className="flex items-center justify-center w-32 h-20 bg-gray-100 rounded text-xs text-gray-500">
+        No video
+      </div>
+    );
+  }
+
+  return (
+    <video 
+      src={videoUrl} 
+      controls 
+      className="w-32 h-20 object-cover rounded border"
+      preload="metadata"
+      onError={(e) => {
+        console.error('Video error:', e);
+        setError('Video playback error');
+      }}
+      onLoadStart={() => console.log('Video loading started')}
+      onLoadedData={() => console.log('Video data loaded successfully')}
+    />
+  );
+};
 
 function formatDate(dateString) {
   if (!dateString) return '-';
@@ -30,6 +149,7 @@ const difficultyLevels = [
 ];
 
 const ModQuestion = () => {
+  const navigate = useNavigate();
   const [questions, setQuestions] = useState([]);
   const [lessons, setLessons] = useState([]);
   const [chapters, setChapters] = useState([]);
@@ -107,8 +227,10 @@ const ModQuestion = () => {
   const fetchSolutions = async () => {
     try {
       const res = await api.get('/solutions');
+      console.log('All solutions:', res.data);
       setSolutions(res.data || []);
-    } catch {
+    } catch (error) {
+      console.error('Error fetching solutions:', error);
       setSolutions([]);
     }
   };
@@ -164,6 +286,11 @@ const ModQuestion = () => {
     setIsEditOpen(true);
   };
 
+  const handleAddSolutionByAI = (questionId) => {
+    navigate('/mod?selected=pgvideo&questionId=' + questionId);
+  };
+
+
   const saveEdit = async () => {
     try {
       await api.put(`/questions/${editData.questionId}`, {
@@ -182,6 +309,45 @@ const ModQuestion = () => {
       fetchQuestions(); fetchSolutions();
     } catch {
       alert('Cập nhật thất bại, vui lòng thử lại');
+    }
+  };
+
+  const [isUpdateVideoOpen, setIsUpdateVideoOpen] = useState(false);
+  const [updateVideoFile, setUpdateVideoFile] = useState(null);
+  const [updatingSolutionId, setUpdatingSolutionId] = useState(null);
+  const [updateLoading, setUpdateLoading] = useState(false);
+
+  const handleOpenUpdateVideo = (solutionId) => {
+    setUpdatingSolutionId(solutionId);
+    setIsUpdateVideoOpen(true);
+    setUpdateVideoFile(null);
+  };
+
+  useEffect(() => {
+    console.log('updatingSolutionId', updatingSolutionId);
+    console.log('updateVideoFile', updateVideoFile);
+  }, [updatingSolutionId,updateVideoFile]);
+
+  const handleUpdateVideo = async () => {
+    if (!updateVideoFile || !updatingSolutionId) return;
+    setUpdateLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append('SolutionId', updatingSolutionId);
+      formData.append('Content', 'Test update video');
+      formData.append('VideoFile', updateVideoFile);
+      await api.put(`/solutions/video`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      setIsUpdateVideoOpen(false);
+      setUpdatingSolutionId(null);
+      setUpdateVideoFile(null);
+      fetchQuestions();
+      fetchSolutions();
+    } catch (e) {
+      alert('Update video thất bại!');
+    } finally {
+      setUpdateLoading(false);
     }
   };
 
@@ -237,18 +403,18 @@ const ModQuestion = () => {
           <Button onClick={handleReset} variant="outline">Đặt lại</Button>
         </div>
 
-        {/* ITEMS COUNT & PAGE SIZE */}
-        <div className="mb-4 flex items-center gap-4">
-          <span className="text-sm text-slate-600">Tổng số câu hỏi: {totalItems}</span>
-          <Select value={pageSize.toString()} onValueChange={v => { setPageSize(Number(v)); setPage(1); }}>
-            <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {pageSizeOptions.map(size => (
-                <SelectItem key={size} value={size.toString()}>{size} / trang</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+                 {/* ITEMS COUNT & PAGE SIZE */}
+         <div className="mb-4 flex items-center gap-4">
+           <span className="text-sm text-slate-600">Tổng số câu hỏi: {totalItems}</span>
+           <Select value={pageSize.toString()} onValueChange={v => { setPageSize(Number(v)); setPage(1); }}>
+             <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
+             <SelectContent>
+               {pageSizeOptions.map(size => (
+                 <SelectItem key={size} value={size.toString()}>{size} / trang</SelectItem>
+               ))}
+             </SelectContent>
+           </Select>
+         </div>
 
         {/* TABLE */}
         <div className="overflow-x-auto min-h-[120px]">
@@ -269,6 +435,7 @@ const ModQuestion = () => {
                   <th className="px-4 py-2 border-b">Question</th>
                   <th className="px-4 py-2 border-b">Solution</th>
                   <th className="px-4 py-2 border-b">Explanation</th>
+                  <th className="px-4 py-2 border-b">Video</th>
                   <th className="px-4 py-2 border-b">Lesson</th>
                   <th className="px-4 py-2 border-b">Chapter</th>
                   <th className="px-4 py-2 border-б">Difficulty</th>
@@ -279,24 +446,37 @@ const ModQuestion = () => {
                 </tr>
               </thead>
               <tbody>
-                {questions.map(row => {
-                  const matchedSolution = solutions.find(s => s.questionId === row.id);
-                  return (
+                                 {questions.map(row => {
+                   const matchedSolution = solutions.find(s => s.questionId === row.id);
+                   console.log(`Question ${row.id} - Matched solution:`, matchedSolution);
+                   return (
                     <tr key={row.id} className="even:bg-slate-50">
                       <td className="px-4 py-2 border-b text-center">{row.id}</td>
                       <td className="px-4 py-2 border-б">{row.content}</td>
                       <td className="px-4 py-2 border-б">{matchedSolution?.content || '-'}</td>
                       <td className="px-4 py-2 border-б">{matchedSolution?.explanation || '-'}</td>
+                                             <td className="px-4 py-2 border-б">
+                        {matchedSolution?.videoData ? (
+                          <a href={matchedSolution.videoData} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Xem video</a>
+                        ) : (
+                          <div className="flex flex-col items-center justify-center w-32 h-20 bg-gray-100 rounded text-xs text-gray-500 p-1">
+                            <span>No video</span>
+                            <span className="text-xs text-gray-400">Q: {row.id}</span>
+                          </div>
+                        )}
+                      </td>
                       <td className="px-4 py-2 border-б">{row.lessonName}</td>
                       <td className="px-4 py-2 border-б">{row.chapterName}</td>
                       <td className="px-4 py-2 border-б">{row.difficultyLevel}</td>
                       <td className="px-4 py-2 border-б">{row.createdByUserName}</td>
                       <td className="px-4 py-2 border-б">{formatDate(row.createdAt)}</td>
                       <td className="px-4 py-2 border-б">{formatDate(row.updatedAt)}</td>
-                      <td className="px-4 py-2 border flex gap-2">
-                        <Button className="bg-blue-500 hover:bg-blue-600 text-white" onClick={() => handleEdit(row)}>Edit</Button>
-                        <Button className="bg-red-500 hover:bg-red-600 text-white" onClick={() => handleDelete(row.id)}>Delete</Button>
-                      </td>
+                                             <td className="px-4 py-2 border flex gap-2">
+                         <Button className="bg-blue-500 hover:bg-blue-600 text-white" onClick={() => handleEdit(row)}>Edit</Button>
+                         <Button className="bg-green-500 hover:bg-green-600 text-white" onClick={() => handleAddSolutionByAI(row.id)}>Add Solution By AI</Button>
+                         <Button className="bg-yellow-500 hover:bg-yellow-600 text-white" onClick={() => handleOpenUpdateVideo(matchedSolution?.id)} disabled={!matchedSolution?.id}>Update Video</Button>
+                         <Button className="bg-red-500 hover:bg-red-600 text-white" onClick={() => handleDelete(row.id)}>Delete</Button>
+                       </td>
                     </tr>
                   );
                 })}
@@ -347,6 +527,24 @@ const ModQuestion = () => {
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsEditOpen(false)}>Hủy</Button>
               <Button onClick={saveEdit}>Lưu</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {isUpdateVideoOpen && (
+        <Dialog open onOpenChange={setIsUpdateVideoOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Cập nhật video cho Solution</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              <Input type="file" accept="video/*" onChange={e => setUpdateVideoFile(e.target.files[0])} />
+              {updateVideoFile && <video src={URL.createObjectURL(updateVideoFile)} controls className="w-full max-h-64 rounded" />}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsUpdateVideoOpen(false)}>Hủy</Button>
+              <Button onClick={handleUpdateVideo} disabled={!updateVideoFile || updateLoading}>{updateLoading ? 'Đang cập nhật...' : 'Cập nhật'}</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

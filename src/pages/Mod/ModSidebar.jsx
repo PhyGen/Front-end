@@ -8,6 +8,7 @@ const sidebarItems = [
   { key: 'textbook', label: 'Textbook' },
   { key: 'question', label: 'Question' },
   { key: 'setting', label: 'Setting' },
+  { key: 'pgvideo', label: 'PGVideo'},
 ];
 
 const ModSidebar = ({ selected, onSelect }) => {
