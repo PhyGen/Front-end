@@ -24,7 +24,6 @@ const ModSemester = () => {
   const [editId, setEditId] = useState(null);
   const [editRow, setEditRow] = useState({ id: '', name: '', gradeId: '' });
   const [saving, setSaving] = useState(false);
-  const [deletingId, setDeletingId] = useState(null);
   const [filterName, setFilterName] = useState('');
   const [filterGradeId, setFilterGradeId] = useState('');
 
@@ -72,19 +71,6 @@ const ModSemester = () => {
       alert('Lưu thất bại!');
     } finally {
       setSaving(false);
-    }
-  };
-
-  const handleDelete = async (id) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa?')) return;
-    setDeletingId(id);
-    try {
-      await api.delete(`/semesters/${id}`);
-      fetchData();
-    } catch (e) {
-      alert('Xóa thất bại!');
-    } finally {
-      setDeletingId(null);
     }
   };
 
@@ -165,7 +151,6 @@ const ModSemester = () => {
                         <td className="px-4 py-2 border">{formatDate(s.updatedAt)}</td>
                         <td className="px-4 py-2 border flex gap-2">
                           <Button size="sm" className="bg-blue-500 hover:bg-blue-600 text-white" onClick={() => handleEdit(s.id)}>Edit</Button>
-                          <Button size="sm" className="bg-red-500 hover:bg-red-600 text-white" onClick={() => handleDelete(s.id)}>Delete</Button>
                         </td>
                       </tr>
                     )

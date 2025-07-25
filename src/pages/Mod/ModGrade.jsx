@@ -20,9 +20,8 @@ const ModGrade = () => {
   const [grades, setGrades] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editId, setEditId] = useState(null);
-  const [editRow, setEditRow] = useState({ id: '', name: '' });
+  const [editRow, setEditRow] = useState({ encodedId: '', name: '' });
   const [saving, setSaving] = useState(false);
-  const [deletingId, setDeletingId] = useState(null);
   const [filterName, setFilterName] = useState("");
 
   useEffect(() => {
@@ -32,27 +31,32 @@ const ModGrade = () => {
   const fetchGrades = () => {
     setLoading(true);
     api.get('/grades')
-      .then(res => setGrades(res.data))
+      .then(res => {
+        setGrades(res.data)
+        console.log("Grades trả về",res.data)
+      }
+    )
       .catch(console.error)
       .finally(() => setLoading(false));
   };
 
   // --- EDIT ---
   const handleEdit = (g) => {
-    setEditId(g.id);
-    setEditRow({ id: g.id, name: g.name });
+    setEditId(g.encodedId);
+    setEditRow({ encodedId: g.encodedId, name: g.name });
   };
+  
   const handleEditCancel = () => {
     setEditId(null);
-    setEditRow({ id: '', name: '' });
+    setEditRow({ encodedId: '', name: '' });
   };
   const handleEditSave = async () => {
     if (!editRow.name.trim()) return;
     setSaving(true);
     try {
-      await api.put(`/grades/${editRow.id}`, { id: editRow.id, name: editRow.name });
+      await api.put(`/grades/${editRow.encodedId}`, { id: editRow.encodedId, name: editRow.name });
       setEditId(null);
-      setEditRow({ id: '', name: '' });
+      setEditRow({ encodedId: '', name: '' });
       fetchGrades();
     } catch (e) {
       alert('Lưu thất bại!');
@@ -61,19 +65,6 @@ const ModGrade = () => {
     }
   };
 
-  // --- DELETE ---
-  const handleDelete = async (id) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa?')) return;
-    setDeletingId(id);
-    try {
-      await api.delete(`/grades/${id}`);
-      fetchGrades();
-    } catch (e) {
-      alert('Xóa thất bại!');
-    } finally {
-      setDeletingId(null);
-    }
-  };
 
   return (
     <Card>
@@ -110,8 +101,8 @@ const ModGrade = () => {
                   .filter(g => g.name.toLowerCase().includes(filterName.toLowerCase()))
                   .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }))
                   .map((g, index) => (
-                    editId === g.id ? (
-                      <tr key={g.id} className="bg-yellow-50">
+                    editId === g.encodedId ? (
+                      <tr key={g.encodedId} className="bg-yellow-50">
                         <td className="px-4 py-2 border font-semibold">{index + 1}</td>
                         <td className="px-4 py-2 border">
                           <Input value={editRow.name} onChange={e => setEditRow(r => ({ ...r, name: e.target.value }))} />
@@ -124,14 +115,13 @@ const ModGrade = () => {
                         </td>
                       </tr>
                     ) : (
-                      <tr key={g.id} className="even:bg-slate-50">
+                      <tr key={g.encodedId} className="even:bg-slate-50">
                         <td className="px-4 py-2 border">{index + 1}</td>
                         <td className="px-4 py-2 border">{g.name}</td>
                         <td className="px-4 py-2 border">{formatDate(g.createdAt)}</td>
                         <td className="px-4 py-2 border">{formatDate(g.updatedAt)}</td>
                         <td className="px-4 py-2 border flex gap-2">
                           <Button size="sm" className="bg-blue-500 hover:bg-blue-600 text-white" onClick={() => handleEdit(g)}>Edit</Button>
-                          <Button size="sm" className="bg-red-500 hover:bg-red-600 text-white" onClick={() => handleDelete(g.id)} disabled={deletingId === g.id}>{deletingId === g.id ? '...' : 'Delete'}</Button>
                         </td>
                       </tr>
                     )

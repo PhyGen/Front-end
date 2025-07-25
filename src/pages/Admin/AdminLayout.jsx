@@ -3,7 +3,7 @@ import AdminSidebar from './AdminSidebar';
 import AdminContent from './AdminContent';
 
 const AdminLayout = () => {
-  const [selected, setSelected] = useState('grade');
+  const [selected, setSelected] = useState('account');
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       <AdminSidebar selected={selected} onSelect={setSelected} />

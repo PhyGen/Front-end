@@ -177,7 +177,7 @@ const SignIn = () => {
       const response = await api.post('/login', loginData);
       console.log('response', response);
       localStorage.setItem('token', response.data.token);
-      
+      console.log("token của tôi", response.data.token)
       if(response.status === 200) {
 // Decode token and set user
         const decodedToken = jwtDecode(response.data.token);
