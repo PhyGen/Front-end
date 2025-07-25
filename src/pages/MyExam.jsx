@@ -1,9 +1,24 @@
 import React, { useEffect, useState } from "react";
 import Card from "@/components/Card";
-import pdfIcon from "@/assets/icons/pdf-icon.svg";
-import wordIcon from "@/assets/icons/word-icon.svg";
 import api from "@/config/axios";
 import { useAuth } from "@/context/AuthContext";
+
+// Hàm tạo HTML cho các câu hỏi
+function renderQuestionsHTML(questions = [], examTitle = '') {
+  let html = `<h2 style="text-align:center; color:#2563eb;">${examTitle}</h2>`;
+  questions.forEach((q, idx) => {
+    html += `
+      <div style="margin-bottom: 24px;">
+        <div style="font-weight: bold;">Câu ${idx + 1}:</div>
+        <div><b>Nội dung:</b> ${q.content || ''}</div>
+        <div><b>Nguồn:</b> ${q.questionSource || ''}</div>
+        <div><b>Độ khó:</b> ${q.difficultyLevel || ''}</div>
+        <div><b>Bài học:</b> ${q.lessonName || ''}</div>
+      </div>
+    `;
+  });
+  return html;
+}
 
 const MyExam = () => {
   const { user } = useAuth();
@@ -14,7 +29,29 @@ const MyExam = () => {
     if (!user || !user.id) return;
     setLoading(true);
     api.get(`/exams/user/${user.id}`)
-      .then(res => setExams(res.data || []))
+      .then(async res => {
+        const examsRaw = res.data || [];
+        // Lấy questions cho từng exam
+        const examsWithQuestions = await Promise.all(examsRaw.map(async (exam) => {
+          try {
+            const qres = await api.get(`/exams/${exam.id}/questions`);
+            // Nếu API trả về mảng các object có trường questionId, cần fetch chi tiết từng question
+            const questionIds = (qres.data || []).map(q => q.questionId);
+            const questions = await Promise.all(questionIds.map(async (qid) => {
+              try {
+                const detail = await api.get(`/questions/${qid}`);
+                return detail.data;
+              } catch {
+                return null;
+              }
+            }));
+            return { ...exam, questions: questions.filter(Boolean) };
+          } catch {
+            return { ...exam, questions: [] };
+          }
+        }));
+        setExams(examsWithQuestions);
+      })
       .catch(() => setExams([]))
       .finally(() => setLoading(false));
   }, [user]);
@@ -30,11 +67,11 @@ const MyExam = () => {
           <Card
             key={exam.id}
             id={exam.id}
-            title={exam.title || exam.name || "Exam"}
-            previewUrl={exam.previewUrl || "https://i.imgur.com/0y8Ftya.png"}
-            icon={exam.fileType === 'docx' ? wordIcon : pdfIcon}
+            title={exam.name || "Exam"}
             onClick={() => {}}
             onSoftDeleteSuccess={() => setExams(prev => prev.filter(e => e.id !== exam.id))}
+            questions={exam.questions || []}
+            type="exam"
           />
         ))
       )}
@@ -42,4 +79,4 @@ const MyExam = () => {
   );
 };
 
-export default MyExam; 
+export default MyExam;

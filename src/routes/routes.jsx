@@ -9,6 +9,11 @@ import DefaultLayout from "../layouts/defaultLayout/defaultLayout";
 import ModLayout from "../pages/Mod/ModLayout";
 import Admin from "../pages/Admin/Admin";
 import CardDetail from '../components/CardDetail';
+import MyExam from '../pages/MyExam';
+import Home from '../pages/Home';
+import Recently from '../pages/Recently';
+import TrashCan from '../pages/TrashCan';
+import PhyGenVideo from '../pages/PhyGenVideo';
 
 console.log('Loading routes, ModLayout:', ModLayout);
 
@@ -22,6 +27,13 @@ const publicRoutes = [
 
 const privateRoutes = [
     { path: '/', component: MainScreen, layout: DefaultLayout, wrapper: AuthWrapper },
+    { path: '/home', component: MainScreen, layout: DefaultLayout, wrapper: AuthWrapper },
+    { path: '/myexam', component: MyExam, layout: DefaultLayout, wrapper: AuthWrapper },
+    { path: '/myexam/:id', component: MyExam, layout: DefaultLayout, wrapper: AuthWrapper },
+    { path: '/question/:id', component: Home, layout: DefaultLayout, wrapper: AuthWrapper },
+    { path: '/recently', component: Recently, layout: DefaultLayout, wrapper: AuthWrapper },
+    { path: '/trashcan', component: TrashCan, layout: DefaultLayout, wrapper: AuthWrapper },
+    { path: '/pgvideo', component: PhyGenVideo, layout: DefaultLayout, wrapper: AuthWrapper },
     { path: '/mod', component: ModLayout, layout: null, wrapper: AuthWrapper },
     { path: '/admin', component: Admin, layout: null, wrapper: AuthWrapper },
     // { path: '/payment', component: Payment, layout: HeaderOnly, role: 'user'},

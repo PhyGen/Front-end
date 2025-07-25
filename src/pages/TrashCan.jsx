@@ -70,10 +70,16 @@ const TrashCan = () => {
             previewUrl={file.previewUrl || "https://i.imgur.com/0y8Ftya.png"}
             renderTrashMenu={() => (
               <>
-                <button className="w-full text-left px-4 py-2 hover:bg-gray-100" onClick={() => handleRecover(file.id)}>
+                <button
+                  className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-[#23272f] dark:text-[#e4e6eb]"
+                  onClick={() => handleRecover(file.id)}
+                >
                   Khôi phục
                 </button>
-                <button className="w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100" onClick={() => alert('Chức năng xóa vĩnh viễn sẽ sớm có!')}>
+                <button
+                  className="w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100 dark:hover:bg-[#23272f] dark:text-red-400"
+                  onClick={() => alert('Chức năng xóa vĩnh viễn sẽ sớm có!')}
+                >
                   Xóa vĩnh viễn
                 </button>
               </>

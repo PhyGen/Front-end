@@ -1,4 +1,19 @@
+// Custom KaTeX dark mode style
+const katexDarkStyle = `
+  .dark .katex {
+    background: #18191a !important;
+    color: #fff !important;
+    border-radius: 6px;
+    padding: 2px 6px;
+    transition: background 0.2s, color 0.2s;
+  }
+  .dark .katex .mord, .dark .katex .mop, .dark .katex .mbin, .dark .katex .mrel, .dark .katex .mopen, .dark .katex .mclose, .dark .katex .mpunct, .dark .katex .minner {
+    color: #fff !important;
+  }
+`;
+
 import React, { useState, useEffect, useRef } from 'react';
+import RichTextRenderer from '@/components/RichTextRenderer';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -154,37 +169,69 @@ const Home = () => {
     }
   };
 
-  // Handler for search bar (search exams and questions)
+      <div className="space-y-6 p-4 bg-gray-100 dark:bg-[#242526] min-h-screen">
+        {/* ...existing code... */}
+      </div>
   const handleSearch = async () => {
     setLoadingSearch(true);
     try {
-      // 1. Lấy tất cả exams của user, lọc trên frontend
+      // Helper: get start/end date for filter
+      const now = new Date();
+      let startDate = null;
+      let endDate = null;
+      if (lastModified === 'today') {
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+      } else if (lastModified === 'last7') {
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6);
+        endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+      } else if (lastModified === 'last30') {
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 29);
+        endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+      } else if (lastModified === 'this_year') {
+        startDate = new Date(now.getFullYear(), 0, 1);
+        endDate = new Date(now.getFullYear() + 1, 0, 1);
+      } else if (lastModified === 'last_year') {
+        startDate = new Date(now.getFullYear() - 1, 0, 1);
+        endDate = new Date(now.getFullYear(), 0, 1);
+      } else if (lastModified === 'custom' && customRange.from && customRange.to) {
+        startDate = new Date(customRange.from);
+        endDate = new Date(customRange.to);
+        endDate.setDate(endDate.getDate() + 1); // include end day
+      }
+
+      // Lấy tất cả exams của user, lọc trên frontend theo tên và thời gian
       const examsRes = await api.get(`/exams/user/${userId}`);
-      const userExams = (examsRes.data || [])
+      let userExams = (examsRes.data || [])
         .filter(e => !e.isDeleted && (
           !searchValue || (e.name && e.name.toLowerCase().includes(searchValue.toLowerCase()))
-        ))
+        ));
+      if (startDate && endDate) {
+        userExams = userExams.filter(e => {
+          const created = new Date(e.createdAt);
+          return created >= startDate && created < endDate;
+        });
+      }
+      userExams = userExams
         .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
         .slice(0, 8)
         .map(item => ({ ...item, type: 'exam' }));
 
-      // 2. Lấy questions trong kho dữ liệu (nếu muốn chỉ lấy của mình thì thêm createdByUserId)
-      const questionsRes = await api.get('/questions', {
-        params: {
-          search: searchValue,
-          pageSize: 8,
-          isSort: 1,
-          sort: 'createdAt:desc',
-          // Nếu muốn chỉ lấy câu hỏi của mình thì mở dòng dưới:
-          // createdByUserId: userId,
-        },
-      });
-      const questions = (questionsRes.data.items || []).map(item => ({ ...item, type: 'question' }));
+      // Lấy tất cả questions, lọc trên frontend theo content và thời gian
+      const questionsRes = await api.get('/questions?pageSize=50&isSort=1&sort=createdAt:desc');
+      let userQuestions = (questionsRes.data.items || [])
+        .filter(q => !searchValue || (q.content && q.content.toLowerCase().includes(searchValue.toLowerCase())));
+      if (startDate && endDate) {
+        userQuestions = userQuestions.filter(q => {
+          const created = new Date(q.createdAt);
+          return created >= startDate && created < endDate;
+        });
+      }
+      userQuestions = userQuestions
+        .slice(0, 8)
+        .map(q => ({ ...q, type: 'question' }));
 
-      setSearchResults([
-        ...userExams,
-        ...questions,
-      ]);
+      setSearchResults([...userExams, ...userQuestions]);
     } catch (error) {
       setSearchResults([]);
     } finally {
@@ -394,170 +441,178 @@ const Home = () => {
   };
 
   return (
-    <div className="space-y-6 p-4 bg-gray-100 dark:bg-[#242526] min-h-screen">
-      {/* Header */}
-      <Card className="bg-blue-50 dark:bg-[#242526] border border-slate-200 dark:border-[#3a3b3c] shadow-lg rounded-2xl">
-        <CardHeader className="text-center pb-4">
-          <CardTitle className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent dark:bg-none dark:text-[#e4e6eb]">
-            {t('home_welcome_title')}
-          </CardTitle>
-          <p className="text-slate-600 dark:text-[#b0b3b8] mt-2">{t('home_welcome_subtitle')}</p>
-        </CardHeader>
-      </Card>
+    <>
+      <style>{katexDarkStyle}</style>
+      <div className="space-y-6 p-4 bg-gray-100 dark:bg-[#242526] min-h-screen">
+        {/* Header */}
+        <Card className="bg-blue-50 dark:bg-[#242526] border border-slate-200 dark:border-[#3a3b3c] shadow-lg rounded-2xl">
+          <CardHeader className="text-center pb-4">
+            <CardTitle className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent dark:bg-none dark:text-[#e4e6eb]">
+              {t('home_welcome_title')}
+            </CardTitle>
+            <p className="text-slate-600 dark:text-[#b0b3b8] mt-2">{t('home_welcome_subtitle')}</p>
+          </CardHeader>
+        </Card>
 
-      {/* Search Section */}
-      <Card className="shadow-md">
-        <CardContent className="p-6">
-          <div className="flex justify-center items-center mb-6">
-            <div className="relative w-80 flex items-center">
-              <span className="absolute left-3 inset-y-0 flex items-center">
-                <Search className="text-slate-400 w-5 h-5" />
-              </span>
-              <Input 
-                type="text" 
-                value={searchValue}
-                onChange={e => setSearchValue(e.target.value)}
-                placeholder={t('home_search_placeholder')} 
-                className="pl-10 pr-4 py-3 border-slate-200 focus:border-blue-500 focus:ring-blue-500"
-              />
-            </div>
-            <Button className="ml-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700" onClick={handleSearch} disabled={loadingSearch}>
-              {loadingSearch ? t('searching') : t('search')}
-            </Button>
-          </div>
-          {filterDropdowns}
-          {/* Search Results */}
-          {searchValue && (
-            <div className="mt-6">
-              <div className="font-semibold mb-2">{t('search_results')}</div>
-              {loadingSearch ? (
-                <div className="text-center text-slate-500">{t('loading')}...</div>
-              ) : searchResults.length === 0 ? (
-                <div className="text-center text-slate-500">{t('no_results_found')}</div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {searchResults.map((item, idx) => (
-                    <Card key={item.id || idx} className="p-4 flex flex-col gap-2 border-slate-200 dark:border-[#18191a] bg-white dark:bg-[#18191a]">
-                      <div className="flex items-center gap-2">
-                        {item.type === 'exam' ? <FileText className="w-5 h-5 text-blue-500" /> : <HelpCircle className="w-5 h-5 text-blue-500" />}
-                        <span className="font-semibold">{item.name || item.content}</span>
-                      </div>
-                      <div className="text-xs text-slate-500">{item.type === 'exam' ? 'Exam' : 'Question'}</div>
-                      {item.type === 'exam' && (
-                        <div className="text-xs text-slate-400">Location: {item.location || item.ownerName || 'Unknown'}</div>
-                      )}
-                      {item.type === 'question' && (
-                        <div className="text-xs text-slate-400">Nguồn: {item.questionSource || 'Không rõ'}</div>
-                      )}
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Suggested Questions */}
-      <Card className="shadow-md bg-white dark:bg-[#242526] border border-slate-200 dark:border-[#3a3b3c] rounded-2xl">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-xl font-semibold text-slate-800 dark:text-[#e4e6eb]">
-            <TrendingUp className="w-5 h-5 text-blue-500 dark:text-[#60a5fa]" />
-            {t('Suggested Questions')}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-4">
-          <div ref={scrollContainerRef} className="flex space-x-6 overflow-x-auto py-2">
-            {loadingQuestions ? (
-                Array.from({ length: 8 }).map((_, idx) => (
-                  <Card key={idx} className="w-80 h-48 rounded-2xl flex-shrink-0">
-                     <div className="p-4 text-center">
-                        <div className="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-full mx-auto mb-3 animate-pulse"></div>
-                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mx-auto mb-2 animate-pulse"></div>
-                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mx-auto animate-pulse"></div>
-                     </div>
-                  </Card>
-                ))
-            ) : questions.length > 0 ? (
-              questions.map((question) => (
-                <Card key={question.id} className="w-80 hover:shadow-lg transition-shadow cursor-pointer border-slate-200 dark:border-[#18191a] bg-white dark:bg-[#18191a] flex flex-col justify-between flex-shrink-0">
-                  <CardContent className="p-4 text-center flex flex-col justify-between flex-grow">
-                    <div>
-                      <div className="w-12 h-12 bg-blue-100 dark:bg-[#242526] rounded-full flex items-center justify-center mx-auto mb-3">
-                        <HelpCircle className="w-6 h-6 text-blue-600 dark:text-[#e4e6eb]" />
-                      </div>
-                      <h3 className="font-semibold text-slate-800 dark:text-[#e4e6eb] mb-1 text-sm min-h-[3.5rem] line-clamp-3" title={question.content}>
-                        {question.content}
-                      </h3>
-                      <p className="text-xs text-slate-400">ID: {question.id}</p>
-                    </div>
-                    <div className="mt-2">
-                      <Badge variant="secondary" className="text-xs text-blue-600 dark:text-[#60a5fa] bg-blue-100 dark:bg-[#1e293b] w-full block text-left truncate p-2" title={question.questionSource}>
-                        Nguồn: {question.questionSource || 'Không rõ'}
-                      </Badge>
-                      <Badge variant="outline" className={`text-xs mt-1 w-full block text-left truncate p-2 ${getDifficultyClass(question.difficultyLevel)}`}>
-                        Độ khó: {question.difficultyLevel || 'Không rõ'}
-                      </Badge>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            ) : (
-                <p className="w-full text-center text-slate-500 dark:text-gray-400 py-10">Không tìm thấy câu hỏi gợi ý nào.</p>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Suggested Exams */}
-      <Card className="shadow-md bg-white dark:bg-[#242526] border border-slate-200 dark:border-[#3a3b3c] rounded-2xl">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-xl font-semibold text-slate-800 dark:text-white">
-            <BookOpen className="w-5 h-5 text-blue-500 dark:text-[#60a5fa]" />
-            Suggested Exams
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <div className="min-w-full bg-slate-50 dark:bg-[#18191a] rounded-lg overflow-hidden">
-              <div className="grid grid-cols-4 gap-4 p-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold">
-                <div>{t('home_exam_table_name')}</div>
-                <div>{t('home_exam_table_reason')}</div>
-                <div>{t('home_exam_table_owner')}</div>
-                <div>{t('home_exam_table_location')}</div>
+        {/* Search Section */}
+        <Card className="shadow-md">
+          <CardContent className="p-6">
+            <div className="flex justify-center items-center mb-6">
+              <div className="relative w-80 flex items-center">
+                <span className="absolute left-3 inset-y-0 flex items-center">
+                  <Search className="text-slate-400 w-5 h-5" />
+                </span>
+                <Input 
+                  type="text" 
+                  value={searchValue}
+                  onChange={e => setSearchValue(e.target.value)}
+                  placeholder={t('home_search_placeholder')} 
+                  className="pl-10 pr-4 py-3 border-slate-200 focus:border-blue-500 focus:ring-blue-500"
+                />
               </div>
-              <div className="divide-y divide-slate-200 dark:divide-[#3a3b3c]">
-                {loadingExams ? (
-                  <div className="text-center py-8 text-slate-500">{t('loading')}...</div>
-                ) : exams.length === 0 ? (
-                  <div className="text-center py-8 text-slate-500">{t('no_exams_found')}</div>
+              <Button className="ml-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700" onClick={handleSearch} disabled={loadingSearch}>
+                {loadingSearch ? t('searching') : t('search')}
+              </Button>
+            </div>
+            {filterDropdowns}
+            {/* Search Results */}
+            {searchValue && (
+              <div className="mt-6">
+                {loadingSearch ? (
+                  <div className="text-center text-slate-500">{t('loading')}...</div>
+                ) : searchResults.length === 0 ? (
+                  <div className="text-center text-slate-500">{t('no_results_found')}</div>
                 ) : (
-                  exams.map((exam, idx) => (
-                    <div key={exam.id || idx} className="grid grid-cols-4 gap-4 p-4 hover:bg-slate-50 dark:hover:bg-[#242526] transition-colors text-slate-800 dark:text-[#e4e6eb]">
-                      <div className="flex items-center gap-2">
-                        <FileText className="w-4 h-4 text-blue-500 dark:text-blue-400" />
-                        <span className="font-medium">{exam.name}</span>
-                      </div>
-                      <div className="text-slate-600 dark:text-[#b0b3b8]">{exam.reason || exam.description || 'No reason'}</div>
-                      <div className="flex items-center gap-2">
-                        <User className="w-4 h-4 text-slate-400 dark:text-[#e4e6eb]" />
-                        <span>{exam.ownerName || exam.createdByUserName || 'Unknown'}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {exam.location === 'My Exam' && <FileText className="w-4 h-4 text-blue-500" />}
-                        {exam.location === 'Shared with me' && <Share2 className="w-4 h-4 text-green-500" />}
-                        {exam.location === 'John' && <User className="w-4 h-4 text-purple-500" />}
-                        <span className="text-slate-600">{exam.location || exam.ownerName || 'Relevant'}</span>
-                      </div>
-                    </div>
-                  ))
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {searchResults.map((item, idx) => (
+                      <Card key={item.id || idx} className="p-4 flex flex-col gap-2 border-slate-200 dark:border-[#18191a] bg-white dark:bg-[#18191a]">
+                        <div className="flex items-center gap-2">
+                          {item.type === 'exam' ? <FileText className="w-5 h-5 text-blue-500" /> : <HelpCircle className="w-5 h-5 text-blue-500" />}
+                          <span className="font-semibold">
+                            {item.type === 'exam' ? (
+                              <RichTextRenderer html={item.name || ''} />
+                            ) : (
+                              <RichTextRenderer html={item.content || ''} />
+                            )}
+                          </span>
+                        </div>
+                        <div className="text-xs text-slate-500">{item.type === 'exam' ? 'Exam' : 'Question'}</div>
+                        {item.type === 'exam' && (
+                          <div className="text-xs text-slate-400">Location: {item.location || item.ownerName || 'Unknown'}</div>
+                        )}
+                        {item.type === 'question' && (
+                          <div className="text-xs text-slate-400">Nguồn: {item.questionSource || 'Không rõ'}</div>
+                        )}
+                      </Card>
+                    ))}
+                  </div>
                 )}
               </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Suggested Questions */}
+        <Card className="shadow-md bg-white dark:bg-[#242526] border border-slate-200 dark:border-[#3a3b3c] rounded-2xl">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-xl font-semibold text-slate-800 dark:text-[#e4e6eb]">
+              <TrendingUp className="w-5 h-5 text-blue-500 dark:text-[#60a5fa]" />
+              {t('Suggested Questions')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4">
+            <div ref={scrollContainerRef} className="flex space-x-6 overflow-x-auto py-2">
+              {loadingQuestions ? (
+                  Array.from({ length: 8 }).map((_, idx) => (
+                    <Card key={idx} className="w-80 h-48 rounded-2xl flex-shrink-0">
+                       <div className="p-4 text-center">
+                          <div className="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-full mx-auto mb-3 animate-pulse"></div>
+                          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mx-auto mb-2 animate-pulse"></div>
+                          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mx-auto animate-pulse"></div>
+                       </div>
+                    </Card>
+                  ))
+              ) : questions.length > 0 ? (
+                questions.filter(q => typeof q.id === 'number' && q.id >= 0).map((question) => (
+                  <Card key={question.id} className="w-80 hover:shadow-lg transition-shadow cursor-pointer border-slate-200 dark:border-[#18191a] bg-white dark:bg-[#18191a] flex flex-col justify-between flex-shrink-0">
+                    <CardContent className="p-4 text-center flex flex-col justify-between flex-grow">
+                      <div>
+                        <div className="w-12 h-12 bg-blue-100 dark:bg-[#242526] rounded-full flex items-center justify-center mx-auto mb-3">
+                          <HelpCircle className="w-6 h-6 text-blue-600 dark:text-[#e4e6eb]" />
+                        </div>
+                        <div className="font-semibold text-slate-800 dark:text-[#e4e6eb] mb-1 text-sm min-h-[3.5rem] line-clamp-3" title={question.content}>
+                          <RichTextRenderer html={question.content || ''} />
+                        </div>
+                        <p className="text-xs text-slate-400">ID: {question.id}</p>
+                      </div>
+                      <div className="mt-2">
+                        <Badge variant="secondary" className="text-xs text-blue-600 dark:text-[#60a5fa] bg-blue-100 dark:bg-[#1e293b] w-full block text-left truncate p-2" title={question.questionSource}>
+                          Nguồn: {question.questionSource || 'Không rõ'}
+                        </Badge>
+                        <Badge variant="outline" className={`text-xs mt-1 w-full block text-left truncate p-2 ${getDifficultyClass(question.difficultyLevel)}`}>
+                          Độ khó: {question.difficultyLevel || 'Không rõ'}
+                        </Badge>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              ) : (
+                  <p className="w-full text-center text-slate-500 dark:text-gray-400 py-10">Không tìm thấy câu hỏi gợi ý nào.</p>
+              )}
             </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+          </CardContent>
+        </Card>
+
+        {/* Suggested Exams */}
+        <Card className="shadow-md bg-white dark:bg-[#242526] border border-slate-200 dark:border-[#3a3b3c] rounded-2xl">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-xl font-semibold text-slate-800 dark:text-white">
+              <BookOpen className="w-5 h-5 text-blue-500 dark:text-[#60a5fa]" />
+              Suggested Exams
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <div className="min-w-full bg-slate-50 dark:bg-[#18191a] rounded-lg overflow-hidden">
+                <div className="grid grid-cols-4 gap-4 p-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold">
+                  <div>{t('home_exam_table_name')}</div>
+                  <div>{t('home_exam_table_reason')}</div>
+                  <div>{t('home_exam_table_owner')}</div>
+                  <div>{t('home_exam_table_location')}</div>
+                </div>
+                <div className="divide-y divide-slate-200 dark:divide-[#3a3b3c]">
+                  {loadingExams ? (
+                    <div className="text-center py-8 text-slate-500">{t('loading')}...</div>
+                  ) : exams.length === 0 ? (
+                    <div className="text-center py-8 text-slate-500">{t('no_exams_found')}</div>
+                  ) : (
+                    exams.map((exam, idx) => (
+                      <div key={exam.id || idx} className="grid grid-cols-4 gap-4 p-4 hover:bg-slate-50 dark:hover:bg-[#242526] transition-colors text-slate-800 dark:text-[#e4e6eb]">
+                        <div className="flex items-center gap-2">
+                          <FileText className="w-4 h-4 text-blue-500 dark:text-blue-400" />
+                          <span className="font-medium">{exam.name}</span>
+                        </div>
+                        <div className="text-slate-600 dark:text-[#b0b3b8]">{exam.reason || exam.description || 'No reason'}</div>
+                        <div className="flex items-center gap-2">
+                          <User className="w-4 h-4 text-slate-400 dark:text-[#e4e6eb]" />
+                          <span>{exam.ownerName || exam.createdByUserName || 'Unknown'}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {exam.location === 'My Exam' && <FileText className="w-4 h-4 text-blue-500" />}
+                          {exam.location === 'Shared with me' && <Share2 className="w-4 h-4 text-green-500" />}
+                          {exam.location === 'John' && <User className="w-4 h-4 text-purple-500" />}
+                          <span className="text-slate-600">{exam.location || exam.ownerName || 'Relevant'}</span>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </>
   );
 };
 

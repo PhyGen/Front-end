@@ -61,7 +61,14 @@ function AppRoutes() {
         }
       >
         <Route index element={<MainScreen />} />
-        <Route path="card-detail/:itemId" element={<CardDetailModal />} />
+        <Route path="home" element={<MainScreen />} />
+        <Route path="myexam" element={<MainScreen />} />
+        <Route path="myexam/:id" element={<CardDetail />} />
+        <Route path="recently" element={<MainScreen />} />
+        <Route path="trashcan" element={<MainScreen />} />
+        <Route path="pgvideo" element={<MainScreen />} />
+        <Route path="create" element={<MainScreen />} />
+        <Route path="card-detail/:itemId" element={<CardDetail />} />
       </Route>
 
       {/* Các route khác nếu có */}

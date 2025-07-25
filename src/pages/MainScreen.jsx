@@ -18,12 +18,12 @@ import {
   Sparkles
 } from "lucide-react";
 import HomeBox from './Home';
-import { useSidebar } from '../context/SidebarContext';
+import { useLocation } from 'react-router-dom';
 import CreateTypeSelect from "@/components/CreateTypeSelect";
 import MyExam from "./MyExam";
 import Recently from "./Recently";
 import TrashCan from "./TrashCan";
-import SharedWithMe from "./SharedWithMe";
+// ...existing code...
 import PhyGenVideo from "./PhyGenVideo";
 
 const Placeholder = ({ label, icon, description, color = "blue", children }) => (
@@ -42,53 +42,45 @@ const Placeholder = ({ label, icon, description, color = "blue", children }) => 
 );
 
 const MainScreen = () => {
-  const { selectedKey } = useSidebar();
   const { t } = useTranslation();
+  const location = useLocation();
+  const path = location.pathname;
 
   let content;
-  if (selectedKey === 'create') {
+  if (path === '/create') {
     content = <CreateTypeSelect />;
+  } else if (path === '/home' || path === '/') {
+    content = <HomeBox />;
+  } else if (path === '/myexam') {
+    content = (
+      <Placeholder 
+        label={t('my_exam')} 
+        icon={BookOpen} 
+        description={t('my_exam_description')}
+        color="blue"
+      >
+        <MyExam />
+      </Placeholder>
+    );
+  } else if (path === '/sharewithme') {
+    content = (
+      <Placeholder
+        label={t('shared_with_me')}
+        icon={Share2}
+        description={t('shared_with_me_description')}
+        color="green"
+      >
+        {/* ...existing code... */}
+      </Placeholder>
+    );
+  } else if (path === '/recently') {
+    content = <Recently />;
+  } else if (path === '/trashcan') {
+    content = <TrashCan />;
+  } else if (path === '/pgvideo') {
+    content = <PhyGenVideo />;
   } else {
-    switch (selectedKey) {
-      case 'home':
-        content = <HomeBox />;
-        break;
-      case 'myExam':
-        content = (
-          <Placeholder 
-            label={t('my_exam')} 
-            icon={BookOpen} 
-            description={t('my_exam_description')}
-            color="blue"
-          >
-            <MyExam />
-          </Placeholder>
-        );
-        break;
-      case 'shared':
-        content = (
-          <Placeholder
-            label={t('shared_with_me')}
-            icon={Share2}
-            description={t('shared_with_me_description')}
-            color="green"
-          >
-            <SharedWithMe />
-          </Placeholder>
-        );
-        break;
-      case 'recent':
-        content = <Recently />;
-        break;
-      case 'trash':
-        content = <TrashCan />;
-        break;
-      case 'pgvideo':
-        content = <PhyGenVideo />;
-        break;
-      default:
-        content = <HomeBox />;
-    }
+    content = <HomeBox />;
   }
 
   return (

@@ -31,6 +31,7 @@ import RichTextRenderer from './RichTextRenderer';
 import pdfIcon from '@/assets/icons/pdf-icon.svg';
 import wordIcon from '@/assets/icons/word-icon.svg';
 import { Document, Packer, Paragraph, TextRun, HeadingLevel } from 'docx';
+import katex from 'katex';
 
 const stepsQuestion = [
   { label: 'Grade Level' },
@@ -174,20 +175,52 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
   // State điều khiển modal/section in PDF
   const [showPrintReview, setShowPrintReview] = useState(false);
 
-  // Hàm render nội dung review exam thành HTML
+  // Hàm render nội dung review exam thành HTML với LaTeX đã render bằng katex.renderToString
   const renderExamReviewHTML = () => {
-    let html = `<div><h2 style="text-align:center; color:#2563eb;">${examName || 'Exam Review'}</h2>`;
+    let html = `<div><h2 style=\"text-align:center; color:#2563eb;\">${examName || 'Exam Review'}</h2>`;
+    const renderLatexBlocks = (inputHtml) => {
+      if (!inputHtml) return '';
+      try {
+        const parser = new window.DOMParser();
+        const doc = parser.parseFromString(`<div>${inputHtml}</div>`, 'text/html');
+        const nodes = doc.querySelectorAll('[data-math-inline]');
+        nodes.forEach(node => {
+          const latex = node.getAttribute('value') || '';
+          try {
+            const rendered = katex.renderToString(latex, {
+              throwOnError: false,
+              strict: false,
+              displayMode: node.tagName === 'DIV',
+            });
+            node.innerHTML = rendered;
+            node.style.background = '#f0f0f0';
+            node.style.padding = '4px 6px';
+            node.style.borderRadius = '4px';
+            node.style.margin = '8px 0';
+            node.style.overflowX = 'auto';
+            node.style.maxWidth = '100%';
+            node.style.wordBreak = 'break-word';
+            node.style.display = node.tagName === 'DIV' ? 'block' : 'inline-block';
+          } catch (err) {
+            node.innerText = latex;
+          }
+        });
+        return doc.body.innerHTML;
+      } catch {
+        return inputHtml;
+      }
+    };
     selectedExamQuestions.forEach((qid, idx) => {
       const q = examQuestionsList.find(q => q.id === qid);
       const solutionObj = solutions.find(s => s.questionId === qid);
       html += `
-        <div style="margin-bottom: 24px;">
-          <div style="font-weight: bold;">Question ${idx + 1}${q?.difficultyLevel ? ` (${q.difficultyLevel})` : ''}:</div>
-          <div>${q?.content || ''}</div>
-          <div style="margin-top: 8px; color: #16a34a; font-weight: bold;">Solution:</div>
-          <div>${solutionObj?.content || '<i>No solution</i>'}</div>
-          <div style="margin-top: 8px; color: #2563eb; font-weight: bold;">Explanation:</div>
-          <div>${solutionObj?.explanation || '<i>No explanation</i>'}</div>
+        <div style='margin-bottom: 24px;'>
+          <div style='font-weight: bold;'>Question ${idx + 1}${q?.difficultyLevel ? ` (${q.difficultyLevel})` : ''}:</div>
+          <div>${renderLatexBlocks(q?.content || '<i>No question content</i>')}</div>
+          <div style='margin-top: 8px; color: #16a34a; font-weight: bold;'>Solution:</div>
+          <div>${renderLatexBlocks(solutionObj?.content || '<i>No solution</i>')}</div>
+          <div style='margin-top: 8px; color: #2563eb; font-weight: bold;'>Explanation:</div>
+          <div>${renderLatexBlocks(solutionObj?.explanation || '<i>No explanation</i>')}</div>
         </div>
       `;
     });
@@ -195,31 +228,50 @@ const MultiStepWizard = ({ onComplete, type, onBack }) => {
     return html;
   };
 
-  // Hàm xử lý download file review (PDF/Word)
+  // Hàm xử lý download file review (PDF/Word) với LaTeX đã render
   const handleDownloadExamReview = async (e) => {
     e.preventDefault();
+    const html = renderExamReviewHTML();
     if (exportFormat === 'pdf') {
-      setShowPrintReview(true);
+      const printWindow = window.open('', '', 'width=900,height=700');
+      printWindow.document.write(`<!DOCTYPE html><html><head><meta charset='utf-8'><link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/katex/dist/katex.min.css\"><style>body { font-family: 'Times New Roman', Times, serif !important; }</style></head><body>${html}</body></html>`);
+      printWindow.document.close();
+      printWindow.focus();
       setTimeout(() => {
-        window.print();
-        setShowPrintReview(false);
-      }, 200);
-    } else if (exportFormat === 'word') {
-      // Word: lấy innerHTML của reviewRef, tạo Blob, tải về .doc
-      if (reviewRef.current) {
-        const html = `<!DOCTYPE html><html><head><meta charset='utf-8'></head><body>${reviewRef.current.innerHTML}</body></html>`;
-        const blob = new Blob([html], { type: 'application/msword' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${examName || 'exam-review'}.doc`;
-        document.body.appendChild(a);
-        a.click();
-        setTimeout(() => {
-          document.body.removeChild(a);
-          URL.revokeObjectURL(url);
-        }, 100);
-      }
+        printWindow.print();
+        printWindow.close();
+      }, 300);
+    } else {
+      // Chuyển HTML sang plain text cho docx
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = html;
+      const textContent = tempDiv.innerText;
+      // Tạo tài liệu docx
+      const doc = new Document({
+        sections: [
+          {
+            properties: {},
+            children: [
+              new Paragraph({
+                text: examName || 'Exam Review',
+                heading: "Heading1"
+              }),
+              ...textContent.split('\n').map(line => new Paragraph(line))
+            ]
+          }
+        ]
+      });
+      const blob = await Packer.toBlob(doc);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${examName || 'exam-review'}.docx`;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 100);
     }
   };
 
@@ -1580,4 +1632,4 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
   }
 }
 
-export default MultiStepWizard; 
+export default MultiStepWizard;

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import RichTextRenderer from '@/components/RichTextRenderer';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationPrevious, PaginationNext } from '@/components/ui/pagination';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -284,9 +285,9 @@ const ModQuestion = () => {
                   return (
                     <tr key={row.id} className="even:bg-slate-50">
                       <td className="px-4 py-2 border-b text-center">{row.id}</td>
-                      <td className="px-4 py-2 border-б">{row.content}</td>
-                      <td className="px-4 py-2 border-б">{matchedSolution?.content || '-'}</td>
-                      <td className="px-4 py-2 border-б">{matchedSolution?.explanation || '-'}</td>
+                      <td className="px-4 py-2 border-b"><RichTextRenderer html={row.content || ''} /></td>
+                      <td className="px-4 py-2 border-b"><RichTextRenderer html={matchedSolution?.content || ''} /></td>
+                      <td className="px-4 py-2 border-b"><RichTextRenderer html={matchedSolution?.explanation || ''} /></td>
                       <td className="px-4 py-2 border-б">{row.lessonName}</td>
                       <td className="px-4 py-2 border-б">{row.chapterName}</td>
                       <td className="px-4 py-2 border-б">{row.difficultyLevel}</td>
